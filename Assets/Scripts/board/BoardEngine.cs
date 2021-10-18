@@ -2,15 +2,28 @@ using UnityEngine;
 using option;
 
 namespace board {
-    public struct linearMovement {
+    public struct LinearMovement {
         public Vector2Int dir;
         public int length;
+
+        public static LinearMovement Mk(Vector2Int dir, int length) {
+            return new LinearMovement { dir = dir, length = length };
+        }
     }
 
     public static class BoardEngine {
+        public static Vector2Int GetLinearPoint(
+            Vector2Int start,
+            LinearMovement linear,
+            int index
+        ) {
+
+            return start + linear.dir * index;
+        }
+
         public static int GetLenUntilFig<T>(
             Vector2Int start,
-            linearMovement linear,
+            LinearMovement linear,
             Option<T>[,] board
         ) {
             var length = 0;
