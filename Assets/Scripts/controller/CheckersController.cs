@@ -86,22 +86,16 @@ namespace controller {
 
     public struct Map {
         public GameObject[,] figures;
-        public Option<Checker> [,] board;
+        public Option<Checker>[,] board;
     }
 
     public class CheckersController : MonoBehaviour {
-        public Transform boardTransform;
-        public Transform leftTop;
-        public Transform moveHighlights;
-
-        public GameObject whiteChecker;
-        public GameObject blackChecker;
-        public GameObject moveHighlight; 
+        public Resources resources;
 
         private Map map;
         private PlayerAction playerAction;
         private ChColor moveColor;
-        private Vector2Int selectCheckerPos;
+        private Vector2Int selected;
         private List<Move> moves = new List<Move>();
 
         private void Awake() {
@@ -117,26 +111,27 @@ namespace controller {
             }
 
             var ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-            RaycastHit hit;
 
-            if (!Physics.Raycast(ray, out hit)) {
+            if (!Physics.Raycast(ray, out RaycastHit hit)) {
                 return;
             }
 
-            var localHit = boardTransform.InverseTransformPoint(hit.point);
-            var point = TransformToPointOnBoard(localHit, leftTop.position);
+            var cell = ToCell(hit.point, resources.leftTop.position);
 
-            var figOpt = map.board[point.x, point.y];
+            var figOpt = map.board[cell.x, cell.y];
             if (figOpt.IsSome() && figOpt.Peel().color == moveColor) {
                 playerAction = PlayerAction.Select;
             }
-            RemoveHighlights(moveHighlights);
+
+            foreach (Transform item in resources.moveHighlights) {
+                Destroy(item.gameObject);
+            }
 
             switch (playerAction) {
                 case PlayerAction.Select:
-                    selectCheckerPos = point;
+                    selected = cell;
                     var checkerLoc = new CheckerLoc {
-                        pos = selectCheckerPos,
+                        pos = selected,
                         board = map.board
                     };
 
@@ -150,7 +145,7 @@ namespace controller {
 
                     break;
                 case PlayerAction.Move:
-                    var move = Move.Mk(selectCheckerPos, point);
+                    var move = Move.Mk(selected, cell);
                     foreach (var possMove in moves) {
                         if (move.to == possMove.to && move.from == possMove.from) {
                             Relocate(possMove);
@@ -276,12 +271,8 @@ namespace controller {
                     if (condition(i, j)) {
                         var dir = new Vector2Int(i, j);
                         var linear = Linear.Mk(dir, length);
-                        checkerMovements.Add(
-                            CheckerMovement.Mk(MoveType.Move, linear)
-                        );
-                        checkerMovements.Add(
-                            CheckerMovement.Mk(MoveType.Attack, linear)
-                        );
+                        checkerMovements.Add(CheckerMovement.Mk(MoveType.Move, linear));
+                        checkerMovements.Add(CheckerMovement.Mk(MoveType.Attack, linear));
                     }
                 }
             }
@@ -292,18 +283,13 @@ namespace controller {
         private void FillBoard(Option<Checker>[,] board) {
             for (int i = 0; i < board.GetLength(0); i++) {
                 for (int j = 0; j < board.GetLength(1); j++) {
+                    if (i > 2 && i < 5) continue;
                     if (i % 2 == 0 && j % 2 != 0 || i % 2 != 0 && j % 2 == 0) {
-                        if (i <= 2) {
-                            map.board[i, j] = Option<Checker>.Some(
-                                Checker.Mk(ChColor.Black, ChType.Basic)
-                            );
-                        }
-
+                        var color = ChColor.Black;
                         if (i >= 5) {
-                            map.board[i, j] = Option<Checker>.Some(
-                                Checker.Mk(ChColor.White, ChType.Basic)
-                            );
+                            color = ChColor.White;
                         }
+                        map.board[i, j] = Option<Checker>.Some(Checker.Mk(color, ChType.Basic));
                     }
                 }
             }
@@ -317,23 +303,24 @@ namespace controller {
                     }
 
                     var checker = board[i, j].Peel();
-                    if (checker.color == ChColor.Black) {
-                        map.figures[i, j] = Instantiate(blackChecker);
-                    }
-
+                    var prefab = resources.blackChecker;
                     if (checker.color == ChColor.White) {
-                        map.figures[i, j] = Instantiate(whiteChecker);
+                        prefab = resources.whiteChecker;
                     }
 
-                    map.figures[i, j].transform.parent = boardTransform;
+                    var checkerObj = Instantiate(prefab);
+                    checkerObj.transform.parent = resources.boardTransform;
                     var offset = new Vector3(0.95f, 0, -0.95f);
-                    var newPos = new Vector3(-j, 0.5f, i) * 2 + leftTop.localPosition - offset;
-                    map.figures[i, j].transform.localPosition = newPos;
+                    var newPos = new Vector3(-j, 0.5f, i) * 2 + resources.leftTop.localPosition - offset;
+                    checkerObj.transform.localPosition = newPos;
+
+                    map.figures[i, j] = checkerObj;
                 }
             }
         }
 
-        public static Vector2Int TransformToPointOnBoard(Vector3 leftTopPos, Vector3 point) {
+        public Vector2Int ToCell(Vector3 globalPoint, Vector3 leftTopPos) {
+            var point = resources.boardTransform.InverseTransformPoint(globalPoint);
             var intermediate = (point - new Vector3(-leftTopPos.x, 0f, leftTopPos.z)) / 2;
             return new Vector2Int(Mathf.Abs((int)intermediate.z), Mathf.Abs((int)intermediate.x));
         }
@@ -345,9 +332,9 @@ namespace controller {
                 var offset = new Vector3(0.95f, 0, -0.95f);
                 var x = -possMove.to.y;
                 var z = possMove.to.x;
-                var newPos = new Vector3(x, 0.5f, z) * 2 + leftTop.localPosition - offset;
-                var obj = Instantiate(moveHighlight);
-                obj.transform.parent = moveHighlights;
+                var newPos = new Vector3(x, 0.5f, z) * 2 + resources.leftTop.localPosition - offset;
+                var obj = Instantiate(resources.moveHighlight);
+                obj.transform.parent = resources.moveHighlights;
                 obj.transform.localPosition = newPos;
             }
         }
@@ -358,12 +345,6 @@ namespace controller {
             }
             board[move.to.x, move.to.y] = board[move.from.x, move.from.y];
             board[move.from.x, move.from.y] = Option<Checker>.None();
-        }
-
-        private void RemoveHighlights(Transform highlights) {
-            foreach (Transform item in highlights) {
-                Destroy(item.gameObject);
-            }
         }
 
         public static Vector2Int GetLinearPoint(Vector2Int start, Linear linear, int index) {
@@ -388,7 +369,7 @@ namespace controller {
             var offset = new Vector3(0.95f, 0, -0.95f);
             var x = -move.to.y;
             var z = move.to.x;
-            var newPos = new Vector3(x, 0.5f, z) * 2 + leftTop.localPosition - offset;
+            var newPos = new Vector3(x, 0.5f, z) * 2 + resources.leftTop.localPosition - offset;
             map.figures[move.from.x, move.from.y].transform.localPosition = newPos;
             map.figures[move.to.x, move.to.y] = map.figures[move.from.x, move.from.y];
             if (moveColor == ChColor.White) {
