@@ -130,6 +130,7 @@ namespace controller {
             if (figOpt.IsSome() && figOpt.Peel().color == moveColor) {
                 playerAction = PlayerAction.Select;
             }
+
             RemoveHighlights(moveHighlights);
 
             switch (playerAction) {
@@ -140,17 +141,29 @@ namespace controller {
                         board = map.board
                     };
 
+
                     var (possMoves, possMovesErr) = GetPossibleMoves(checkerLoc);
+
                     if (possMovesErr != MoveErr.None) {
                         Debug.LogError("possible moves return isErr");
                     }
                     moves = possMoves;
+                    var attackMoves = new List<Move>();
+                    foreach (var possMove in moves) {
+                        if (possMove.destroy.IsSome()) {
+                            attackMoves.Add(possMove);
+                        }
+                    }
+                    if (IsNeedAttack(map.board)) {
+                        moves = attackMoves;
+                    }
                     CreateMoveHighlights(moves);
                     playerAction = PlayerAction.Move;
 
                     break;
                 case PlayerAction.Move:
                     var move = Move.Mk(selectCheckerPos, point);
+
                     foreach (var possMove in moves) {
                         if (move.to == possMove.to && move.from == possMove.from) {
                             Relocate(possMove);
@@ -196,7 +209,8 @@ namespace controller {
         public (List<MovePoints>, MoveErr) GetPossiblePoints(
             CheckerLoc checkerLoc
         ) {
-            var res = new List<MovePoints>();
+            var attackRes = new List<MovePoints>();
+            var movesRes = new List<MovePoints>();
             var (checkerMovements, err) = GetCheckersMovements(checkerLoc);
             if (err != MoveErr.None) {
                 return (default(List<MovePoints>), MoveErr.CheckersMovementsErr);
@@ -210,7 +224,7 @@ namespace controller {
                 var lastOpt = checkerLoc.board[lastPoint.x, lastPoint.y];
                 if (checkerMovement.type == MoveType.Move) {
                     if (lastOpt.IsNone()) {
-                        res.Add(MovePoints.Mk(lastPoint, Option<Vector2Int>.None()));
+                        movesRes.Add(MovePoints.Mk(lastPoint, Option<Vector2Int>.None()));
                     }
                 }
 
@@ -223,7 +237,7 @@ namespace controller {
                         if (!IsOnBoard(nextPos, checkerLoc.board)) continue;
                         var nextOpt = checkerLoc.board[nextPos.x, nextPos.y];
                         if (nextOpt.IsNone()) {
-                            res.Add(MovePoints.Mk(nextPos, Option<Vector2Int>.Some(lastPoint)));
+                            attackRes.Add(MovePoints.Mk(nextPos, Option<Vector2Int>.Some(lastPoint)));
                         } else {
                             break;
                         }
@@ -231,10 +245,14 @@ namespace controller {
                 }
             }
 
-            return (res, MoveErr.None);
+            if (attackRes.Count > 0) {
+                return (attackRes, MoveErr.None);
+            }
+
+            return (movesRes, MoveErr.None);
         }
 
-        public static (List<CheckerMovement>, MoveErr) GetCheckersMovements(
+        public (List<CheckerMovement>, MoveErr) GetCheckersMovements(
             CheckerLoc checkerLoc
         ) {
             if (checkerLoc.board == null) {
@@ -265,7 +283,7 @@ namespace controller {
             return (checkerMovements, MoveErr.None);
         }
 
-        public static List<CheckerMovement> CreateCheckerMovements(
+        public List<CheckerMovement> CreateCheckerMovements(
             CheckerLoc checkerLoc,
             Func<int, int, bool> condition,
             int length
@@ -333,7 +351,7 @@ namespace controller {
             }
         }
 
-        public static Vector2Int TransformToPointOnBoard(Vector3 leftTopPos, Vector3 point) {
+        public Vector2Int TransformToPointOnBoard(Vector3 leftTopPos, Vector3 point) {
             var intermediate = (point - new Vector3(-leftTopPos.x, 0f, leftTopPos.z)) / 2;
             return new Vector2Int(Mathf.Abs((int)intermediate.z), Mathf.Abs((int)intermediate.x));
         }
@@ -352,7 +370,25 @@ namespace controller {
             }
         }
 
-        public static void CheckerMove(Move move, Option<Checker>[,] board) {
+        public bool IsNeedAttack(Option<Checker>[,] board) {
+            for (int i = 0; i < board.GetLength(0); i++) {
+                for (int j = 0; j < board.GetLength(1); j++) {
+                    if (board[i, j].IsNone()) continue;
+                    var checker = board[i, j].Peel();
+                    if (checker.color != moveColor) continue;
+                    var checkerLoc = new CheckerLoc { pos = new Vector2Int(i, j), board = board };
+                    var (points, err) = GetPossiblePoints(checkerLoc);
+                    foreach (var point in points) {
+                        if (point.sentenced.IsSome()) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+
+        public void CheckerMove(Move move, Option<Checker>[,] board) {
             if (move.destroy.IsSome()) {
                 board[move.destroy.Peel().x, move.destroy.Peel().y] = Option<Checker>.None();
             }
@@ -366,7 +402,7 @@ namespace controller {
             }
         }
 
-        public static Vector2Int GetLinearPoint(
+        public Vector2Int GetLinearPoint(
             Vector2Int start,
             LinearMovement linear,
             int index
@@ -375,7 +411,7 @@ namespace controller {
             return start + linear.dir * index;
         }
 
-        public static bool IsOnBoard<T>(Vector2Int pos, Option<T>[,] board) {
+        public bool IsOnBoard<T>(Vector2Int pos, Option<T>[,] board) {
             var size = new Vector2Int(board.GetLength(0), board.GetLength(1));
             if (pos.x < 0 || pos.y < 0 || pos.x >= size.x || pos.y >= size.y) {
                 return false;
