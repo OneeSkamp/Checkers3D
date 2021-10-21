@@ -107,8 +107,8 @@ namespace controller {
         private void Awake() {
             map.figures = new GameObject[8, 8];
             map.board = new Option<Checker>[8, 8];
-            FillingBoard(map.board);
-            FillingCheckers(map.board);
+            FillBoard(map.board);
+            FillCheckers(map.board);
         }
 
         private void Update() {
@@ -289,7 +289,7 @@ namespace controller {
             return checkerMovements;
         }
 
-        private void FillingBoard(Option<Checker>[,] board) {
+        private void FillBoard(Option<Checker>[,] board) {
             for (int i = 0; i < board.GetLength(0); i++) {
                 for (int j = 0; j < board.GetLength(1); j++) {
                     if (i % 2 == 0 && j % 2 != 0 || i % 2 != 0 && j % 2 == 0) {
@@ -309,7 +309,7 @@ namespace controller {
             }
         }
 
-        private void FillingCheckers(Option<Checker>[,] board) {
+        private void FillCheckers(Option<Checker>[,] board) {
             for (int i = 0; i < board.GetLength(0); i++) {
                 for (int j = 0; j < board.GetLength(1); j++) {
                     if (board[i, j].IsNone()) {
@@ -366,12 +366,7 @@ namespace controller {
             }
         }
 
-        public static Vector2Int GetLinearPoint(
-            Vector2Int start,
-            Linear linear,
-            int index
-        ) {
-
+        public static Vector2Int GetLinearPoint(Vector2Int start, Linear linear, int index) {
             return start + linear.dir * index;
         }
 
