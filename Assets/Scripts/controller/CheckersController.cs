@@ -123,13 +123,9 @@ namespace controller {
                 playerAction = PlayerAction.Select;
             }
 
-<<<<<<< HEAD
-            RemoveHighlights(moveHighlights);
-=======
             foreach (Transform item in resources.moveHighlights) {
                 Destroy(item.gameObject);
             }
->>>>>>> 941f06d5b3daf5fc4bb439e870b707414c211a3c
 
             switch (playerAction) {
                 case PlayerAction.Select:
@@ -160,12 +156,8 @@ namespace controller {
 
                     break;
                 case PlayerAction.Move:
-<<<<<<< HEAD
-                    var move = Move.Mk(selectCheckerPos, point);
 
-=======
                     var move = Move.Mk(selected, cell);
->>>>>>> 941f06d5b3daf5fc4bb439e870b707414c211a3c
                     foreach (var possMove in moves) {
                         if (move.to == possMove.to && move.from == possMove.from) {
                             Relocate(possMove);
@@ -344,12 +336,9 @@ namespace controller {
             }
         }
 
-<<<<<<< HEAD
-        public Vector2Int TransformToPointOnBoard(Vector3 leftTopPos, Vector3 point) {
-=======
+
         public Vector2Int ToCell(Vector3 globalPoint, Vector3 leftTopPos) {
             var point = resources.boardTransform.InverseTransformPoint(globalPoint);
->>>>>>> 941f06d5b3daf5fc4bb439e870b707414c211a3c
             var intermediate = (point - new Vector3(-leftTopPos.x, 0f, leftTopPos.z)) / 2;
             return new Vector2Int(Mathf.Abs((int)intermediate.z), Mathf.Abs((int)intermediate.x));
         }
@@ -394,22 +383,14 @@ namespace controller {
             board[move.from.x, move.from.y] = Option<Checker>.None();
         }
 
-<<<<<<< HEAD
         private void RemoveHighlights(Transform highlights) {
             foreach (Transform item in highlights) {
                 Destroy(item.gameObject);
             }
         }
 
-        public Vector2Int GetLinearPoint(
-            Vector2Int start,
-            LinearMovement linear,
-            int index
-        ) {
 
-=======
         public static Vector2Int GetLinearPoint(Vector2Int start, Linear linear, int index) {
->>>>>>> 941f06d5b3daf5fc4bb439e870b707414c211a3c
             return start + linear.dir * index;
         }
 
@@ -441,4 +422,5 @@ namespace controller {
             }
         }
     }
+
 }
