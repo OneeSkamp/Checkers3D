@@ -22,12 +22,12 @@ namespace controller {
         }
     }
 
-    public struct LinearMovement {
+    public struct Linear {
         public Vector2Int dir;
         public int length;
 
-        public static LinearMovement Mk(Vector2Int dir, int length) {
-            return new LinearMovement { dir = dir, length = length };
+        public static Linear Mk(Vector2Int dir, int length) {
+            return new Linear { dir = dir, length = length };
         }
     }
 
@@ -57,9 +57,9 @@ namespace controller {
 
     public struct CheckerMovement {
         public MoveType type;
-        public LinearMovement linear;
+        public Linear linear;
 
-        public static CheckerMovement Mk(MoveType type, LinearMovement linear) {
+        public static CheckerMovement Mk(MoveType type, Linear linear) {
             return new CheckerMovement { type = type, linear = linear };
         }
     }
@@ -275,7 +275,7 @@ namespace controller {
                 for (int j = -1; j <= 1; j++) {
                     if (condition(i, j)) {
                         var dir = new Vector2Int(i, j);
-                        var linear = LinearMovement.Mk(dir, length);
+                        var linear = Linear.Mk(dir, length);
                         checkerMovements.Add(
                             CheckerMovement.Mk(MoveType.Move, linear)
                         );
@@ -368,7 +368,7 @@ namespace controller {
 
         public static Vector2Int GetLinearPoint(
             Vector2Int start,
-            LinearMovement linear,
+            Linear linear,
             int index
         ) {
 
