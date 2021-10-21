@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0.44657844, g: 0.49641222, b: 0.57481694, a: 1}
+  m_IndirectSpecularColor: {r: 0.44657826, g: 0.49641263, b: 0.57481676, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -133,6 +133,7 @@ GameObject:
   m_Component:
   - component: {fileID: 73204097}
   - component: {fileID: 73204096}
+  - component: {fileID: 73204098}
   m_Layer: 0
   m_Name: init
   m_TagString: Untagged
@@ -152,12 +153,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a3ba1463125294e47a40729f29d2e3c9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  boardTransform: {fileID: 783480351}
-  leftTop: {fileID: 491824622}
-  moveHighlights: {fileID: 835871849}
-  whiteChecker: {fileID: 3734317919805586836, guid: f9f56594e7ec8f34f9a20aefd5928259, type: 3}
-  blackChecker: {fileID: 1663534572489754241, guid: 03777c7393dca2b41a1334fa230d517f, type: 3}
-  moveHighlight: {fileID: 3011315072822383537, guid: d6d3f9a3d7fa1a940acc3fe863ab07fb, type: 3}
+  resources: {fileID: 73204098}
 --- !u!4 &73204097
 Transform:
   m_ObjectHideFlags: 0
@@ -172,6 +168,24 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 3
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &73204098
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 73204095}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8e69e7ad39b7edf47b53ea306f0aee4f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  boardTransform: {fileID: 783480351}
+  leftTop: {fileID: 491824622}
+  moveHighlights: {fileID: 835871849}
+  whiteChecker: {fileID: 3734317919805586836, guid: f9f56594e7ec8f34f9a20aefd5928259, type: 3}
+  blackChecker: {fileID: 1663534572489754241, guid: 03777c7393dca2b41a1334fa230d517f, type: 3}
+  moveHighlight: {fileID: 3011315072822383537, guid: d6d3f9a3d7fa1a940acc3fe863ab07fb, type: 3}
 --- !u!4 &491824622 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 8088598710917935486, guid: 04e70081efa69224da10e5267f8a0907, type: 3}
