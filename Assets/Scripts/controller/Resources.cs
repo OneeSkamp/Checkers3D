@@ -8,6 +8,8 @@ namespace controller {
 
         public GameObject whiteChecker;
         public GameObject blackChecker;
+        public GameObject whiteLady;
+        public GameObject blackLady;
         public GameObject moveHighlight;
 
         private void Awake() {
@@ -37,6 +39,18 @@ namespace controller {
 
             if (blackChecker == null) {
                 Debug.LogError("Black checker isn't provided");
+                this.enabled = false;
+                return;
+            }
+
+            if (whiteLady == null) {
+                Debug.LogError("White lady isn't provided");
+                this.enabled = false;
+                return;
+            }
+
+            if (blackLady == null) {
+                Debug.LogError("Black lady isn't provided");
                 this.enabled = false;
                 return;
             }
