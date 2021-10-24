@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using option;
 
 namespace controller {
-    public enum MoveErr{
+    public enum CheckerErr{
         None,
         BoardIsNull,
         PosOutsideBoard,
@@ -17,17 +17,18 @@ namespace controller {
         public Vector2Int to;
         public Option<Vector2Int> destroy;
 
-        public static Move Mk(Vector2Int from, Vector2Int to) {
-            return new Move { from = from, to = to };
+        public static Move Mk(Vector2Int from, Vector2Int to, Option<Vector2Int> destroy) {
+            return new Move { from = from, to = to, destroy = destroy };
         }
     }
 
     public struct Linear {
+        public MoveType type;
         public Vector2Int dir;
         public int length;
 
-        public static Linear Mk(Vector2Int dir, int length) {
-            return new Linear { dir = dir, length = length };
+        public static Linear Mk(MoveType type, Vector2Int dir, int length) {
+            return new Linear {type = type, dir = dir, length = length };
         }
     }
 
@@ -55,15 +56,6 @@ namespace controller {
         }
     }
 
-    public struct CheckerMovement {
-        public MoveType type;
-        public Linear linear;
-
-        public static CheckerMovement Mk(MoveType type, Linear linear) {
-            return new CheckerMovement { type = type, linear = linear };
-        }
-    }
-
     public struct CheckerLoc {
         public Vector2Int pos;
         public Option<Checker>[,] board;
@@ -73,15 +65,6 @@ namespace controller {
         None,
         Select,
         Move
-    }
-
-    public struct MovePoints {
-        public Vector2Int to;
-        public Option<Vector2Int> sentenced;
-
-        public static MovePoints Mk(Vector2Int to, Option<Vector2Int> sentenced) {
-            return new MovePoints { to = to, sentenced = sentenced };
-        }
     }
 
     public struct Map {
@@ -96,9 +79,19 @@ namespace controller {
         private PlayerAction playerAction;
         private ChColor moveColor;
         private Vector2Int selected;
+        private Vector3 leftTopLocal;
+        private readonly Vector3 offset = new Vector3(0.95f, 0, -0.95f);
         private List<Move> moves = new List<Move>();
 
         private void Awake() {
+            if (resources == null) {
+                Debug.LogError("Resources isn't provided");
+                this.enabled = false;
+                return;
+            }
+
+            leftTopLocal = resources.leftTop.localPosition;
+
             map.figures = new GameObject[8, 8];
             map.board = new Option<Checker>[8, 8];
             FillBoard(map.board);
@@ -135,10 +128,9 @@ namespace controller {
                         board = map.board
                     };
 
+                    var (possMoves, possMovesErr) = GetMoves(checkerLoc);
 
-                    var (possMoves, possMovesErr) = GetPossibleMoves(checkerLoc);
-
-                    if (possMovesErr != MoveErr.None) {
+                    if (possMovesErr != CheckerErr.None) {
                         Debug.LogError("possible moves return isErr");
                     }
                     moves = possMoves;
@@ -157,12 +149,25 @@ namespace controller {
                     break;
                 case PlayerAction.Move:
 
-                    var move = Move.Mk(selected, cell);
+                    var move = Move.Mk(selected, cell, Option<Vector2Int>.None());
                     foreach (var possMove in moves) {
                         if (move.to == possMove.to && move.from == possMove.from) {
                             Relocate(possMove);
                             if (possMove.to.x == 0 || possMove.to.x == 7) {
                                 PromoteChecker(possMove.to);
+                            }
+
+                            var newCheckerLoc = new CheckerLoc {
+                                pos = possMove.to,
+                                board = map.board
+                            };
+
+                            if (IsAttackPos(newCheckerLoc)) {
+                                if (moveColor == ChColor.Black) {
+                                    moveColor = ChColor.White;
+                                } else {
+                                    moveColor = ChColor.Black;
+                                }
                             }
                         }
                     }
@@ -172,135 +177,103 @@ namespace controller {
             }
         }
 
-        public (List<Move>, MoveErr) GetPossibleMoves(CheckerLoc checkerLoc) {
-            if (checkerLoc.board == null) {
-                return (default(List<Move>), MoveErr.BoardIsNull);
-            }
-
-            var checkerOpt = checkerLoc.board[checkerLoc.pos.x, checkerLoc.pos.y];
-            if (checkerOpt.IsNone()) {
-                return (default(List<Move>), MoveErr.PosOutsideBoard);
-            }
-
-            var moves = new List<Move>();
-            var (possPoints, err) = GetPossiblePoints(checkerLoc);
-            if (err != MoveErr.None) {
-                return (default(List<Move>), MoveErr.PossiblePointsErr);
-            }
-
-            if (possPoints.Count != 0) {
-                foreach (var possPoint in possPoints) {
-                    var move = new Move();
-                    move.from = checkerLoc.pos;
-                    move.to = possPoint.to;
-                    if (possPoint.sentenced.IsSome()) {
-                        move.destroy = Option<Vector2Int>.Some(possPoint.sentenced.Peel());
-                    }
-                    moves.Add(move);
-                }
-            }
-
-            return (moves, MoveErr.None);
-        }
-
-        public (List<MovePoints>, MoveErr) GetPossiblePoints(
+        public (List<Move>, CheckerErr) GetMoves(
             CheckerLoc checkerLoc
         ) {
-            var attackRes = new List<MovePoints>();
-            var movesRes = new List<MovePoints>();
+            var attackRes = new List<Move>();
+            var movesRes = new List<Move>();
             var (checkerMovements, err) = GetCheckersMovements(checkerLoc);
-            if (err != MoveErr.None) {
-                return (default(List<MovePoints>), MoveErr.CheckersMovementsErr);
+            if (err != CheckerErr.None) {
+                return (default(List<Move>), CheckerErr.CheckersMovementsErr);
             }
 
             foreach (var checkerMovement in checkerMovements) {
-                var linear = checkerMovement.linear;
                 var pos = checkerLoc.pos;
 
-                for (var i = 1; i <= linear.length; i++) {
-                    var next = GetLinearPoint(pos, linear, i);
+                for (var i = 1; i <= checkerMovement.length; i++) {
+                    var next = GetLinearPoint(pos, checkerMovement, i);
                     if (!IsOnBoard(next, checkerLoc.board)) continue;
                     var lastOpt = checkerLoc.board[next.x, next.y];
                     if (checkerMovement.type == MoveType.Move) {
                         if (lastOpt.IsNone()) {
-                            Debug.Log("+");
-                            movesRes.Add(MovePoints.Mk(next, Option<Vector2Int>.None()));
+                            movesRes.Add(Move.Mk(checkerLoc.pos, next, Option<Vector2Int>.None()));
                         }
                     }
 
                     if (checkerMovement.type == MoveType.Attack) {
-                        Debug.Log("-");
                         if (lastOpt.IsNone()) continue;
                         var last = lastOpt.Peel();
                         if (last.color == moveColor) continue;
 
-                        var nextPos = next + linear.dir;
+                        var nextPos = next + checkerMovement.dir;
                         if (!IsOnBoard(nextPos, checkerLoc.board)) continue;
                         var nextOpt = checkerLoc.board[nextPos.x, nextPos.y];
                         if (nextOpt.IsNone()) {
-                            attackRes.Add(MovePoints.Mk(nextPos, Option<Vector2Int>.Some(next)));
+                            attackRes.Add(
+                                Move.Mk(checkerLoc.pos, nextPos, Option<Vector2Int>.Some(next))
+                            );
                         } else {
                             break;
                         }
                     }
                 }
-
             }
 
             if (attackRes.Count > 0) {
-                return (attackRes, MoveErr.None);
+                return (attackRes, CheckerErr.None);
             }
-            return (movesRes, MoveErr.None);
+            return (movesRes, CheckerErr.None);
         }
 
-        public (List<CheckerMovement>, MoveErr) GetCheckersMovements(
+        public (List<Linear>, CheckerErr) GetCheckersMovements(
             CheckerLoc checkerLoc
         ) {
             if (checkerLoc.board == null) {
-                return (default(List<CheckerMovement>), MoveErr.BoardIsNull);
+                return (default(List<Linear>), CheckerErr.BoardIsNull);
             }
 
             var checkerOpt = checkerLoc.board[checkerLoc.pos.x, checkerLoc.pos.y];
             if (checkerOpt.IsNone()) {
-                return (default(List<CheckerMovement>), MoveErr.PosOutsideBoard);
+                return (default(List<Linear>), CheckerErr.PosOutsideBoard);
             }
 
-            var checkerMovements = new List<CheckerMovement>();
+            var movements = new List<Linear>();
 
             var checker = checkerOpt.Peel();
             Func<int, int, bool> cond;
             switch (checker.type) {
                 case ChType.Basic:
+                    cond = (int i, int j) => i != 0 && j != 0;
+                    movements.AddRange(CreateLinear(checkerLoc, cond, MoveType.Attack, 1));
                     if (checker.color == ChColor.White) {
                         cond = (int i, int j) => i < 0 && Mathf.Abs(j) == 1;
-                        checkerMovements.AddRange(CreateCheckerMovements(checkerLoc, cond, 1));
+                        movements.AddRange(CreateLinear(checkerLoc, cond, MoveType.Move, 1));
                     } else {
                         cond = (int i, int j) => i > 0 && Mathf.Abs(j) == 1;
-                        checkerMovements.AddRange(CreateCheckerMovements(checkerLoc, cond, 1));
+                        movements.AddRange(CreateLinear(checkerLoc, cond, MoveType.Move, 1));
                     }
                     break;
                 case ChType.Lady:
                         cond = (int i, int j) => i != 0 && j != 0;
-                        checkerMovements.AddRange(CreateCheckerMovements(checkerLoc, cond, 8));
+                        movements.AddRange(CreateLinear(checkerLoc, cond, MoveType.Move, 8));
                     break;
             }
 
-            return (checkerMovements, MoveErr.None);
+            return (movements, CheckerErr.None);
         }
 
-        public List<CheckerMovement> CreateCheckerMovements(
+        public List<Linear> CreateLinear(
             CheckerLoc checkerLoc,
             Func<int, int, bool> condition,
+            MoveType moveType,
             int length
         ) {
-            var checkerMovements = new List<CheckerMovement>();
+            var checkerMovements = new List<Linear>();
             for (int i = -1; i <= 1; i++) {
                 for (int j = -1; j <= 1; j++) {
                     if (condition(i, j)) {
                         var dir = new Vector2Int(i, j);
-                        var linear = Linear.Mk(dir, length);
-                        checkerMovements.Add(CheckerMovement.Mk(MoveType.Move, linear));
-                        checkerMovements.Add(CheckerMovement.Mk(MoveType.Attack, linear));
+                        checkerMovements.Add(Linear.Mk(moveType, dir, length));
                     }
                 }
             }
@@ -338,8 +311,7 @@ namespace controller {
 
                     var checkerObj = Instantiate(prefab);
                     checkerObj.transform.parent = resources.boardTransform;
-                    var offset = new Vector3(0.95f, 0, -0.95f);
-                    var newPos = new Vector3(-j, 0.5f, i) * 2 + resources.leftTop.localPosition - offset;
+                    var newPos = new Vector3(-j, 0.5f, i) * 2 + leftTopLocal - offset;
                     checkerObj.transform.localPosition = newPos;
 
                     map.figures[i, j] = checkerObj;
@@ -358,10 +330,9 @@ namespace controller {
             var result = new List<GameObject>();
             if (possMoves == null) return;
             foreach (var possMove in possMoves) {
-                var offset = new Vector3(0.95f, 0, -0.95f);
                 var x = -possMove.to.y;
                 var z = possMove.to.x;
-                var newPos = new Vector3(x, 0.5f, z) * 2 + resources.leftTop.localPosition - offset;
+                var newPos = new Vector3(x, 0.5f, z) * 2 + leftTopLocal - offset;
                 var obj = Instantiate(resources.moveHighlight);
                 obj.transform.parent = resources.moveHighlights;
                 obj.transform.localPosition = newPos;
@@ -375,9 +346,9 @@ namespace controller {
                     var checker = board[i, j].Peel();
                     if (checker.color != moveColor) continue;
                     var checkerLoc = new CheckerLoc { pos = new Vector2Int(i, j), board = board };
-                    var (points, err) = GetPossiblePoints(checkerLoc);
+                    var (points, err) = GetMoves(checkerLoc);
                     foreach (var point in points) {
-                        if (point.sentenced.IsSome()) {
+                        if (point.destroy.IsSome()) {
                             return true;
                         }
                     }
@@ -394,14 +365,35 @@ namespace controller {
             board[move.from.x, move.from.y] = Option<Checker>.None();
         }
 
-        private void RemoveHighlights(Transform highlights) {
-            foreach (Transform item in highlights) {
-                Destroy(item.gameObject);
-            }
+        public Vector2Int GetLinearPoint(Vector2Int start, Linear linear, int index) {
+            return start + linear.dir * index;
         }
 
-        public static Vector2Int GetLinearPoint(Vector2Int start, Linear linear, int index) {
-            return start + linear.dir * index;
+        public bool IsAttackPos(CheckerLoc checkerLoc) {
+            var (checkerLinear, err) = GetCheckersMovements(checkerLoc);
+            if (err != CheckerErr.None) {
+                return false;
+            }
+            var checker = checkerLoc.board[checkerLoc.pos.x, checkerLoc.pos.y].Peel();
+
+            foreach (var linear in checkerLinear) {
+                for (int i = 1; i <= linear.length; i++) {
+                    var nextPos = checkerLoc.pos + linear.dir * i;
+                    if (!IsOnBoard(nextPos, checkerLoc.board)) break;
+                    var nextOpt = checkerLoc.board[nextPos.x, nextPos.y];
+                    if (nextOpt.IsNone()) continue;
+                    var next = nextOpt.Peel();
+                    if (next.color == checker.color) break;
+                    var lastPos = nextPos + linear.dir;
+                    if (!IsOnBoard(lastPos, checkerLoc.board)) break;
+                    var lastOpt = checkerLoc.board[lastPos.x, lastPos.y];
+                    if (lastOpt.IsNone()) {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
         }
 
         public bool IsOnBoard<T>(Vector2Int pos, Option<T>[,] board) {
@@ -422,13 +414,14 @@ namespace controller {
             if (color == ChColor.White) {
                 obj = resources.whiteLady;
             }
-            map.board[promotePos.x, promotePos.y] = Option<Checker>.Some(Checker.Mk(color, ChType.Lady));
+            var lady = Option<Checker>.Some(Checker.Mk(color, ChType.Lady));
+            map.board[promotePos.x, promotePos.y] = lady;
             var pos = map.figures[promotePos.x, promotePos.y].transform.localPosition;
             Destroy(map.figures[promotePos.x, promotePos.y]);
-            var lady = Instantiate(obj);
-            lady.transform.parent = resources.boardTransform;
-            lady.transform.localPosition = pos;
-            map.figures[promotePos.x, promotePos.y] = lady;
+            var ladyObj = Instantiate(obj);
+            ladyObj.transform.parent = resources.boardTransform;
+            ladyObj.transform.localPosition = pos;
+            map.figures[promotePos.x, promotePos.y] = ladyObj;
         }
 
         private void Relocate(Move move) {
@@ -437,10 +430,9 @@ namespace controller {
                 Destroy(map.figures[move.destroy.Peel().x, move.destroy.Peel().y]);
             }
 
-            var offset = new Vector3(0.95f, 0, -0.95f);
             var x = -move.to.y;
             var z = move.to.x;
-            var newPos = new Vector3(x, 0.5f, z) * 2 + resources.leftTop.localPosition - offset;
+            var newPos = new Vector3(x, 0.5f, z) * 2 + leftTopLocal - offset;
             map.figures[move.from.x, move.from.y].transform.localPosition = newPos;
             map.figures[move.to.x, move.to.y] = map.figures[move.from.x, move.from.y];
             if (moveColor == ChColor.White) {
