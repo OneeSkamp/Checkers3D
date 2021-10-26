@@ -55,11 +55,13 @@ namespace controller {
         private ChColor moveColor;
         private Vector2Int selected;
         private Vector3 leftTopLocal;
+        private Vector3 offset;
         private bool onlyAttack;
-        private readonly Vector3 offset = new Vector3(0.95f, 0, -0.95f);
+
         private List<Vector2Int> moveCells = new List<Vector2Int>();
         private List<Vector2Int> attackCells = new List<Vector2Int>();
         private List<Vector2Int> possibleCells = new List<Vector2Int>();
+        private List<Vector2Int> dirs = new List<Vector2Int>();
         private CheckerLoc checkerLoc = new CheckerLoc();
 
         private void Awake() {
@@ -69,7 +71,61 @@ namespace controller {
                 return;
             }
 
+            if (resources.boardTransform == null) {
+                Debug.LogError("Board transform isn't provided");
+                this.enabled = false;
+                return;
+            }
+
+            if (resources.leftTop == null) {
+                Debug.LogError("Left top isn't provided");
+                this.enabled = false;
+                return;
+            }
+
+            if (resources.moveHighlights == null) {
+                Debug.LogError("Move highlights isn't provided");
+                this.enabled = false;
+                return;
+            }
+
+            if (resources.whiteChecker == null) {
+                Debug.LogError("White checker isn't provided");
+                this.enabled = false;
+                return;
+            }
+
+            if (resources.blackChecker == null) {
+                Debug.LogError("Black checker isn't provided");
+                this.enabled = false;
+                return;
+            }
+
+            if (resources.whiteLady == null) {
+                Debug.LogError("White lady isn't provided");
+                this.enabled = false;
+                return;
+            }
+
+            if (resources.blackLady == null) {
+                Debug.LogError("Black lady isn't provided");
+                this.enabled = false;
+                return;
+            }
+
+            if (resources.moveHighlight == null) {
+                Debug.LogError("Move highlight isn't provided");
+                this.enabled = false;
+                return;
+            }
+
             leftTopLocal = resources.leftTop.localPosition;
+            offset = resources.offset.localPosition;
+
+            dirs.Add(new Vector2Int(-1, 1));
+            dirs.Add(new Vector2Int(-1, -1));
+            dirs.Add(new Vector2Int(1, 1));
+            dirs.Add(new Vector2Int(1, -1));
 
             map.figures = new GameObject[8, 8];
             map.board = new Option<Checker>[8, 8];
@@ -109,24 +165,14 @@ namespace controller {
                     moveCells.Clear();
                     attackCells.Clear();
                     var checker = checkerOpt.Peel();
-                    var dirs = new List<Vector2Int>();
+
                     int maxCount = Mathf.Max(map.board.GetLength(0), map.board.GetLength(1));
+                    var skipDir = 1;
                     if (checker.type == ChType.Basic) {
                         maxCount = 1;
                         if (checker.color == ChColor.White) {
-                            dirs.Add(new Vector2Int(-1, 1));
-                            dirs.Add(new Vector2Int(-1, -1));
-                        } else {
-                            dirs.Add(new Vector2Int(1, 1));
-                            dirs.Add(new Vector2Int(1, -1));
+                            skipDir = -1;
                         }
-                    }
-
-                    if (checker.type == ChType.Lady) {
-                        dirs.Add(new Vector2Int(-1, 1));
-                        dirs.Add(new Vector2Int(-1, -1));
-                        dirs.Add(new Vector2Int(1, 1));
-                        dirs.Add(new Vector2Int(1, -1));
                     }
 
                     foreach (var dir in dirs) {
@@ -135,6 +181,7 @@ namespace controller {
                             if (!IsOnBoard(nextPos, checkerLoc.board)) break;
                             var nextOpt = checkerLoc.board[nextPos.x, nextPos.y];
                             if (nextOpt.IsNone()) {
+                                if (checker.type == ChType.Basic && dir.x != skipDir) break;
                                 moveCells.Add(nextPos);
                             }
 
@@ -156,12 +203,6 @@ namespace controller {
                         }
                     }
 
-                    var attackDirs = new List<Vector2Int>();
-                    attackDirs.Add(new Vector2Int(-1, 1));
-                    attackDirs.Add(new Vector2Int(-1, -1));
-                    attackDirs.Add(new Vector2Int(1, 1));
-                    attackDirs.Add(new Vector2Int(1, -1));
-
                     onlyAttack = false;
                     for (int i = 0; i <= map.board.GetLength(0) - 1; i++) {
                         for (int j = 0; j <= map.board.GetLength(1) - 1; j++) {
@@ -173,7 +214,7 @@ namespace controller {
                                 count = 1;
                             }
                             if (ch.color != moveColor) continue;
-                            foreach (var dir in attackDirs) {
+                            foreach (var dir in dirs) {
                                 for (int k = 1; k <= count; k++) {
                                     var nextPos = new Vector2Int(i, j) + dir * k;
                                     if (!IsOnBoard(nextPos, map.board)) break;
@@ -261,7 +302,6 @@ namespace controller {
                 }
             }
         }
-
 
         public Vector2Int ToCell(Vector3 globalPoint, Vector3 leftTopPos) {
             var point = resources.boardTransform.InverseTransformPoint(globalPoint);
