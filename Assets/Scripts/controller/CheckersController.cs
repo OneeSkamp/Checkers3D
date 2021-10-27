@@ -8,7 +8,8 @@ namespace controller {
         BoardIsNull,
         PosOutsideBoard,
         PossiblePointsErr,
-        CheckersMovementsErr
+        CheckersMovementsErr,
+        NoCheckerOnPosition
     }
 
     public enum ChColor {
@@ -54,9 +55,9 @@ namespace controller {
         private PlayerAction playerAction;
         private ChColor moveColor;
         private Vector2Int selected;
-        private Vector3 leftTopLocal;
         private Vector3 offset;
         private bool onlyAttack;
+        private bool nextAttack;
 
         private List<Vector2Int> moveCells = new List<Vector2Int>();
         private List<Vector2Int> attackCells = new List<Vector2Int>();
@@ -119,7 +120,6 @@ namespace controller {
                 return;
             }
 
-            leftTopLocal = resources.leftTop.localPosition;
             offset = resources.offset.localPosition;
 
             dirs.Add(new Vector2Int(-1, 1));
@@ -166,7 +166,7 @@ namespace controller {
                     attackCells.Clear();
                     var checker = checkerOpt.Peel();
 
-                    int maxCount = Mathf.Max(map.board.GetLength(0), map.board.GetLength(1));
+                    var maxCount = Mathf.Max(map.board.GetLength(0), map.board.GetLength(1));
                     var skipDir = 1;
                     if (checker.type == ChType.Basic) {
                         maxCount = 1;
@@ -252,10 +252,12 @@ namespace controller {
                                 PromoteChecker(cell);
                             }
 
-                            if (moveColor == ChColor.White) {
-                                moveColor = ChColor.Black;
-                            } else {
-                                moveColor = ChColor.White;
+                            if (!nextAttack) {
+                                if (moveColor == ChColor.White) {
+                                    moveColor = ChColor.Black;
+                                } else {
+                                    moveColor = ChColor.White;
+                                }
                             }
                         }
                     }
@@ -281,6 +283,7 @@ namespace controller {
         }
 
         private void FillCheckers(Option<Checker>[,] board) {
+            var leftTop = resources.leftTop.localPosition;
             for (int i = 0; i < board.GetLength(0); i++) {
                 for (int j = 0; j < board.GetLength(1); j++) {
                     if (board[i, j].IsNone()) {
@@ -295,7 +298,7 @@ namespace controller {
 
                     var checkerObj = Instantiate(prefab);
                     checkerObj.transform.parent = resources.boardTransform;
-                    var newPos = new Vector3(-j, 0.5f, i) * 2 + leftTopLocal - offset;
+                    var newPos = new Vector3(-j, 0.5f, i) * 2 + leftTop - offset;
                     checkerObj.transform.localPosition = newPos;
 
                     map.figures[i, j] = checkerObj;
@@ -310,12 +313,13 @@ namespace controller {
         }
 
         public void CreateMoveHighlights(List<Vector2Int> possMoves) {
+            var leftTop = resources.leftTop.localPosition;
             var result = new List<GameObject>();
             if (possMoves == null) return;
             foreach (var possMove in possMoves) {
                 var x = -possMove.y;
                 var z = possMove.x;
-                var newPos = new Vector3(x, 0.5f, z) * 2 + leftTopLocal - offset;
+                var newPos = new Vector3(x, 0.5f, z) * 2 + leftTop - offset;
                 var obj = Instantiate(resources.moveHighlight);
                 obj.transform.parent = resources.moveHighlights;
                 obj.transform.localPosition = newPos;
@@ -363,24 +367,54 @@ namespace controller {
         }
 
         private void Relocate(CheckerLoc chLoc, Vector2Int to) {
-            CheckerMove(chLoc, to);
+            nextAttack = false;
             var pos = chLoc.pos;
             var dif = to - pos;
             var dir = new Vector2Int(dif.x/Mathf.Abs(dif.x), dif.y/Mathf.Abs(dif.y));
-            var moveLength = dif.magnitude / Mathf.Sqrt(2);;
+            var moveLength = dif.magnitude / Mathf.Sqrt(2);
+            var checkerOpt = chLoc.board[pos.x, pos.y];
+            if (checkerOpt.IsNone()) {
+                Debug.LogError("No checker on pos");
+                return;
+            }
+            CheckerMove(chLoc, to);
+            var checker = checkerOpt.Peel();
             for (int i = 1; i < moveLength; i++) {
                 var nextPos = pos + dir * i;
                 var next = map.figures[nextPos.x, nextPos.y];
                 if (next != null) {
+                    var maxCount = Mathf.Max(map.board.GetLength(0), map.board.GetLength(1));
+                    if (checker.type == ChType.Basic) {
+                        maxCount = 1;
+                    }
+
+                    foreach (var direction in dirs) {
+                        for (int j = 1; j <= maxCount; j++) {
+                            var newNextPos = to + direction * j;
+                            if (!IsOnBoard(newNextPos, map.board)) break;
+                            var newNextOpt = map.board[newNextPos.x, newNextPos.y];
+                            if (newNextOpt.IsSome()) {
+                                var newNext = newNextOpt.Peel();
+                                if (newNext.color == checker.color) break;
+                                var afterOnePos = newNextPos + direction;
+                                if (!IsOnBoard(afterOnePos, map.board)) break;
+                                var afterOneOpt = map.board[afterOnePos.x, afterOnePos.y];
+                                if (afterOneOpt.IsNone()) {
+                                    nextAttack = true;
+                                    break;
+                                }
+                            }
+                        }
+                    }
                     Destroy(map.figures[nextPos.x, nextPos.y]);
                 }
             }
             var x = -to.y;
             var z = to.x;
-            var newPos = new Vector3(x, 0.5f, z) * 2 + leftTopLocal - offset;
+            var leftTop = resources.leftTop.localPosition;
+            var newPos = new Vector3(x, 0.5f, z) * 2 + leftTop - offset;
             map.figures[chLoc.pos.x, chLoc.pos.y].transform.localPosition = newPos;
             map.figures[to.x, to.y] = map.figures[chLoc.pos.x, chLoc.pos.y];
         }
     }
-
 }
