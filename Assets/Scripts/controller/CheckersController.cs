@@ -22,7 +22,6 @@ namespace controller {
         Lady
     }
 
-
     public struct Checker {
         public ChColor color;
         public ChType type;
@@ -55,7 +54,6 @@ namespace controller {
         private PlayerAction playerAction;
         private ChColor moveColor;
         private Vector2Int selected;
-        private Vector3 offset;
         private bool onlyAttack;
         private bool nextAttack;
 
@@ -119,8 +117,6 @@ namespace controller {
                 this.enabled = false;
                 return;
             }
-
-            offset = resources.offset.localPosition;
 
             dirs.Add(new Vector2Int(-1, 1));
             dirs.Add(new Vector2Int(-1, -1));
@@ -284,6 +280,7 @@ namespace controller {
 
         private void FillCheckers(Option<Checker>[,] board) {
             var leftTop = resources.leftTop.localPosition;
+            var offset = resources.offset.localPosition;
             for (int i = 0; i < board.GetLength(0); i++) {
                 for (int j = 0; j < board.GetLength(1); j++) {
                     if (board[i, j].IsNone()) {
@@ -313,9 +310,10 @@ namespace controller {
         }
 
         public void CreateMoveHighlights(List<Vector2Int> possMoves) {
+            if (possMoves == null) return;
             var leftTop = resources.leftTop.localPosition;
             var result = new List<GameObject>();
-            if (possMoves == null) return;
+            var offset = resources.offset.localPosition;
             foreach (var possMove in possMoves) {
                 var x = -possMove.y;
                 var z = possMove.x;
@@ -411,6 +409,7 @@ namespace controller {
             }
             var x = -to.y;
             var z = to.x;
+            var offset = resources.offset.localPosition;
             var leftTop = resources.leftTop.localPosition;
             var newPos = new Vector3(x, 0.5f, z) * 2 + leftTop - offset;
             map.figures[chLoc.pos.x, chLoc.pos.y].transform.localPosition = newPos;
