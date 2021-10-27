@@ -31,9 +31,9 @@ namespace controller {
         }
     }
 
-    public struct CheckerLoc {
-        public Vector2Int pos;
-        public Option<Checker>[,] board;
+    public struct ChInfo {
+        public bool attack;
+        public List<Vector2Int> points;
     }
 
     public enum PlayerAction {
@@ -54,14 +54,10 @@ namespace controller {
         private PlayerAction playerAction;
         private ChColor moveColor;
         private Vector2Int selected;
-        private bool onlyAttack;
         private bool nextAttack;
 
-        private List<Vector2Int> moveCells = new List<Vector2Int>();
-        private List<Vector2Int> attackCells = new List<Vector2Int>();
-        private List<Vector2Int> possibleCells = new List<Vector2Int>();
         private List<Vector2Int> dirs = new List<Vector2Int>();
-        private CheckerLoc checkerLoc = new CheckerLoc();
+        private Dictionary<Vector2Int, ChInfo> chInfos = new Dictionary<Vector2Int, ChInfo>();
 
         private void Awake() {
             if (resources == null) {
@@ -154,110 +150,106 @@ namespace controller {
             switch (playerAction) {
                 case PlayerAction.Select:
                     selected = cell;
-                    checkerLoc = new CheckerLoc {
-                        pos = selected,
-                        board = map.board
-                    };
-                    moveCells.Clear();
-                    attackCells.Clear();
-                    var checker = checkerOpt.Peel();
 
-                    var maxCount = Mathf.Max(map.board.GetLength(0), map.board.GetLength(1));
-                    var skipDir = 1;
-                    if (checker.type == ChType.Basic) {
-                        maxCount = 1;
-                        if (checker.color == ChColor.White) {
-                            skipDir = -1;
-                        }
-                    }
-
-                    foreach (var dir in dirs) {
-                        for (int i = 1; i <= maxCount; i++) {
-                            var nextPos = checkerLoc.pos + dir * i;
-                            if (!IsOnBoard(nextPos, checkerLoc.board)) break;
-                            var nextOpt = checkerLoc.board[nextPos.x, nextPos.y];
-                            if (nextOpt.IsNone()) {
-                                if (checker.type == ChType.Basic && dir.x != skipDir) break;
-                                moveCells.Add(nextPos);
+                    if (chInfos.Count == 0) {
+                        var checker = checkerOpt.Peel();
+                        var maxCount = 1;
+                        var skipXDir = 1;
+                        if (checker.type == ChType.Basic) {
+                            if (checker.color == ChColor.White) {
+                                skipXDir = -1;
                             }
+                        }
+                        if (checker.type == ChType.Lady) {
+                            maxCount = Mathf.Max(map.board.GetLength(0), map.board.GetLength(1));
+                        }
 
-                            if (nextOpt.IsSome()) {
-                                var next = nextOpt.Peel();
-                                if (next.color == checker.color) break;
-                                var afterOnePos = nextPos + dir;
-                                if (!IsOnBoard(afterOnePos, checkerLoc.board)) break;
-                                var afterOneOpt = checkerLoc.board[afterOnePos.x, afterOnePos.y];
-                                if (afterOneOpt.IsSome()) break;
-                                for (var j = 1; j <= maxCount; j++) {
-                                    var afterNext = nextPos + dir * j;
-                                    if (!IsOnBoard(afterNext, checkerLoc.board)) break;
-                                    nextOpt = checkerLoc.board[afterNext.x, afterNext.y];
-                                    if (nextOpt.IsSome()) break;
-                                    attackCells.Add(afterNext);
+                        // var a = 1;
+                        // var dir = new Vector2Int();
+                        // var pos = new Vector2Int();
+                        // while (a <= maxCount) {
+                        //     var nextPos = pos + dir * a;
+                        //     if (!IsOnBoard(nextPos, map.board)) break;
+                        //     var nextOpt = map.board[nextPos.x, nextPos.y];
+                        //     if (checker.type == ChType.Basic) {
+                        //         if (nextOpt.IsNone()) {
+                        //             break;
+                        //         } else {
+
+                        //         }
+                        //     }
+
+                        //     if (checker.type == ChType.Lady) {
+
+                        //     }
+                        // }
+
+                        for (int i = 0; i < map.board.GetLength(0); i++) {
+                            for (int j = 0; j < map.board.GetLength(1); j++) {
+                                var chOpt = map.board[i, j];
+                                if (chOpt.IsNone()) continue;
+                                var ch = chOpt.Peel();
+                                var count = Mathf.Max(map.board.GetLength(0), map.board.GetLength(1));
+                                if (ch.type == ChType.Basic) {
+                                    count = 1;
                                 }
-                            }
-                        }
-                    }
+                                if (ch.color != moveColor) continue;
+                                var chInfo = new ChInfo();
+                                var moveCells = new List<Vector2Int>();
+                                foreach (var dir in dirs) {
+                                    for (int k = 1; k <= count; k++) {
+                                        var nextPos = new Vector2Int(i, j) + dir * k;
+                                        if (!IsOnBoard(nextPos, map.board)) break;
 
-                    onlyAttack = false;
-                    for (int i = 0; i <= map.board.GetLength(0) - 1; i++) {
-                        for (int j = 0; j <= map.board.GetLength(1) - 1; j++) {
-                            var chOpt = map.board[i, j];
-                            if (chOpt.IsNone()) continue;
-                            var ch = chOpt.Peel();
-                            var count = Mathf.Max(map.board.GetLength(0), map.board.GetLength(1));
-                            if (ch.type == ChType.Basic) {
-                                count = 1;
-                            }
-                            if (ch.color != moveColor) continue;
-                            foreach (var dir in dirs) {
-                                for (int k = 1; k <= count; k++) {
-                                    var nextPos = new Vector2Int(i, j) + dir * k;
-                                    if (!IsOnBoard(nextPos, map.board)) break;
-                                    var nextOpt = map.board[nextPos.x, nextPos.y];
-                                    if (nextOpt.IsSome()) {
-                                        if (nextOpt.Peel().color == moveColor) break;
-                                        var afterOnePos = nextPos + dir;
-                                        if (!IsOnBoard(afterOnePos, map.board)) break;
-                                        var afterOneOpt = map.board[afterOnePos.x, afterOnePos.y];
-                                        if (afterOneOpt.IsNone()) {
-                                            onlyAttack = true;
+                                        var nextOpt = map.board[nextPos.x, nextPos.y];
+                                        if (nextOpt.IsNone()) {
+                                            if (checker.type == ChType.Basic && dir.x != skipXDir) break;
+                                            moveCells.Add(nextPos);
+                                        } else {
+                                            var next = nextOpt.Peel();
+                                            if (next.color == checker.color) break;
+
+                                            var afterOnePos = nextPos + dir;
+                                            if (!IsOnBoard(afterOnePos, map.board)) break;
+                                            var afterOneOpt = map.board[afterOnePos.x, afterOnePos.y];
+                                            if (afterOneOpt.IsSome()) break;
+                                            for (var t = 1; t <= maxCount; t++) {
+                                                var afterNext = nextPos + dir * t;
+                                                if (!IsOnBoard(afterNext, map.board)) break;
+                                                var afterNextOpt = map.board[afterNext.x, afterNext.y];
+                                                if (afterNextOpt.IsSome()) break;
+                                                moveCells.Add(afterNext);
+                                            }
                                         }
                                     }
                                 }
+                                chInfo.points = moveCells;
+                                chInfos.Add(new Vector2Int(i, j), chInfo);
                             }
                         }
                     }
-                    if (onlyAttack) {
-                        CreateMoveHighlights(attackCells);
-                    } else {
-                        CreateMoveHighlights(moveCells);
-                    }
+
+                    CreateMoveHighlights(chInfos[cell].points);
                     playerAction = PlayerAction.Move;
                     break;
 
                 case PlayerAction.Move:
-                    possibleCells = moveCells;
-                    if (onlyAttack) {
-                        possibleCells = attackCells;
-                    }
-                    foreach (var emptyCell in possibleCells) {
+                    var moves = chInfos[selected].points;
+                    foreach (var emptyCell in moves) {
                         if (cell == emptyCell) {
-                            Relocate(checkerLoc, emptyCell);
+                            Relocate(selected, emptyCell);
                             if (cell.x == 0 || cell.x == map.board.GetLength(0) - 1) {
                                 PromoteChecker(cell);
                             }
 
-                            if (!nextAttack) {
-                                if (moveColor == ChColor.White) {
-                                    moveColor = ChColor.Black;
-                                } else {
-                                    moveColor = ChColor.White;
-                                }
+                            if (moveColor == ChColor.White) {
+                                moveColor = ChColor.Black;
+                            } else {
+                                moveColor = ChColor.White;
                             }
                         }
                     }
-
+                    chInfos.Clear();
                     playerAction = PlayerAction.None;
                     break;
             }
@@ -324,14 +316,14 @@ namespace controller {
             }
         }
 
-        public void CheckerMove(CheckerLoc chLoc, Vector2Int to) {
-            var pos = chLoc.pos;
+        public void CheckerMove(Vector2Int from, Vector2Int to) {
+            var pos = from;
             var dif = to - pos;
             var dir = new Vector2Int(dif.x/Mathf.Abs(dif.x), dif.y/Mathf.Abs(dif.y));
             var moveLength = dif.magnitude / Mathf.Sqrt(2);
             for (int i = 1; i < moveLength; i++) {
                 var nextPos = pos + dir * i;
-                var nextOpt = chLoc.board[nextPos.x, nextPos.y];
+                var nextOpt = map.board[nextPos.x, nextPos.y];
                 if (nextOpt.IsSome()) {
                     map.board[nextPos.x, nextPos.y] = Option<Checker>.None();
                 }
@@ -364,46 +356,23 @@ namespace controller {
             map.figures[promotePos.x, promotePos.y] = ladyObj;
         }
 
-        private void Relocate(CheckerLoc chLoc, Vector2Int to) {
+        private void Relocate(Vector2Int from, Vector2Int to) {
             nextAttack = false;
-            var pos = chLoc.pos;
+            var pos = from;
             var dif = to - pos;
             var dir = new Vector2Int(dif.x/Mathf.Abs(dif.x), dif.y/Mathf.Abs(dif.y));
             var moveLength = dif.magnitude / Mathf.Sqrt(2);
-            var checkerOpt = chLoc.board[pos.x, pos.y];
+            var checkerOpt = map.board[pos.x, pos.y];
             if (checkerOpt.IsNone()) {
                 Debug.LogError("No checker on pos");
                 return;
             }
-            CheckerMove(chLoc, to);
+            CheckerMove(from, to);
             var checker = checkerOpt.Peel();
             for (int i = 1; i < moveLength; i++) {
                 var nextPos = pos + dir * i;
                 var next = map.figures[nextPos.x, nextPos.y];
                 if (next != null) {
-                    var maxCount = Mathf.Max(map.board.GetLength(0), map.board.GetLength(1));
-                    if (checker.type == ChType.Basic) {
-                        maxCount = 1;
-                    }
-
-                    foreach (var direction in dirs) {
-                        for (int j = 1; j <= maxCount; j++) {
-                            var newNextPos = to + direction * j;
-                            if (!IsOnBoard(newNextPos, map.board)) break;
-                            var newNextOpt = map.board[newNextPos.x, newNextPos.y];
-                            if (newNextOpt.IsSome()) {
-                                var newNext = newNextOpt.Peel();
-                                if (newNext.color == checker.color) break;
-                                var afterOnePos = newNextPos + direction;
-                                if (!IsOnBoard(afterOnePos, map.board)) break;
-                                var afterOneOpt = map.board[afterOnePos.x, afterOnePos.y];
-                                if (afterOneOpt.IsNone()) {
-                                    nextAttack = true;
-                                    break;
-                                }
-                            }
-                        }
-                    }
                     Destroy(map.figures[nextPos.x, nextPos.y]);
                 }
             }
@@ -412,8 +381,8 @@ namespace controller {
             var offset = resources.offset.localPosition;
             var leftTop = resources.leftTop.localPosition;
             var newPos = new Vector3(x, 0.5f, z) * 2 + leftTop - offset;
-            map.figures[chLoc.pos.x, chLoc.pos.y].transform.localPosition = newPos;
-            map.figures[to.x, to.y] = map.figures[chLoc.pos.x, chLoc.pos.y];
+            map.figures[pos.x, pos.y].transform.localPosition = newPos;
+            map.figures[to.x, to.y] = map.figures[pos.x, pos.y];
         }
     }
 }
