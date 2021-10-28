@@ -14,7 +14,8 @@ namespace controller {
 
     public enum ChColor {
         White,
-        Black
+        Black,
+        Count
     }
 
     public enum ChType {
@@ -38,7 +39,7 @@ namespace controller {
 
     public enum PlayerAction {
         None,
-        Select,
+        SelectChecker,
         Move
     }
 
@@ -52,8 +53,9 @@ namespace controller {
 
         private Map map;
         private PlayerAction playerAction;
-        private ChColor moveColor;
+        private ChColor moveClr;
         private Vector2Int selected;
+        private bool onlyAttack;
         private bool nextAttack;
 
         private List<Vector2Int> dirs = new List<Vector2Int>();
@@ -139,94 +141,102 @@ namespace controller {
             var cell = ToCell(hit.point, resources.leftTop.position);
 
             var checkerOpt = map.board[cell.x, cell.y];
-            if (checkerOpt.IsSome() && checkerOpt.Peel().color == moveColor) {
-                playerAction = PlayerAction.Select;
+            if (checkerOpt.IsSome() && checkerOpt.Peel().color == moveClr) {
+                playerAction = PlayerAction.SelectChecker;
             }
 
             foreach (Transform item in resources.moveHighlights) {
                 Destroy(item.gameObject);
             }
 
-            switch (playerAction) {
-                case PlayerAction.Select:
-                    selected = cell;
+            if (chInfos.Count == 0) {
+                onlyAttack = false;
+                for (int i = 0; i < map.board.GetLength(0); i++) {
+                    for (int j = 0; j < map.board.GetLength(1); j++) {
+                        var chOpt = map.board[i, j];
+                        if (chOpt.IsNone()) continue;
 
-                    if (chInfos.Count == 0) {
-                        var checker = checkerOpt.Peel();
-                        var maxCount = 1;
+                        var ch = chOpt.Peel();
+                        if (ch.color != moveClr) continue;
+
                         var skipXDir = 1;
-                        if (checker.type == ChType.Basic) {
-                            if (checker.color == ChColor.White) {
-                                skipXDir = -1;
-                            }
-                        }
-                        if (checker.type == ChType.Lady) {
-                            maxCount = Mathf.Max(map.board.GetLength(0), map.board.GetLength(1));
+                        if (ch.color == ChColor.White) {
+                            skipXDir = -1;
                         }
 
-                        // var a = 1;
-                        // var dir = new Vector2Int();
-                        // var pos = new Vector2Int();
-                        // while (a <= maxCount) {
-                        //     var nextPos = pos + dir * a;
-                        //     if (!IsOnBoard(nextPos, map.board)) break;
-                        //     var nextOpt = map.board[nextPos.x, nextPos.y];
-                        //     if (checker.type == ChType.Basic) {
-                        //         if (nextOpt.IsNone()) {
-                        //             break;
-                        //         } else {
+                        var chInfo = new ChInfo();
+                        var moveCells = new List<Vector2Int>();
+                        var attackCells = new List<Vector2Int>();
+                        foreach (var dir in dirs) {
+                            var k = 0;
+                            var condition = true;
+                            while (condition) {
+                                k++;
 
-                        //         }
-                        //     }
+                                var nextPos = new Vector2Int(i, j) + dir * k;
+                                if (!IsOnBoard(nextPos, map.board)) break;
 
-                        //     if (checker.type == ChType.Lady) {
+                                var nextOpt = map.board[nextPos.x, nextPos.y];
+                                if (nextOpt.IsNone()) {
+                                    if (ch.type == ChType.Basic && dir.x != skipXDir) {
+                                        break;
+                                    }
+                                    moveCells.Add(nextPos);
+                                } else {
+                                    var next = nextOpt.Peel();
+                                    if (next.color == ch.color) break;
 
-                        //     }
-                        // }
+                                    var aftPos = nextPos + dir;
+                                    if (!IsOnBoard(aftPos, map.board)) break;
 
-                        for (int i = 0; i < map.board.GetLength(0); i++) {
-                            for (int j = 0; j < map.board.GetLength(1); j++) {
-                                var chOpt = map.board[i, j];
-                                if (chOpt.IsNone()) continue;
-                                var ch = chOpt.Peel();
-                                var count = Mathf.Max(map.board.GetLength(0), map.board.GetLength(1));
-                                if (ch.type == ChType.Basic) {
-                                    count = 1;
-                                }
-                                if (ch.color != moveColor) continue;
-                                var chInfo = new ChInfo();
-                                var moveCells = new List<Vector2Int>();
-                                foreach (var dir in dirs) {
-                                    for (int k = 1; k <= count; k++) {
-                                        var nextPos = new Vector2Int(i, j) + dir * k;
-                                        if (!IsOnBoard(nextPos, map.board)) break;
+                                    var aftOpt = map.board[aftPos.x, aftPos.y];
+                                    if (aftOpt.IsSome()) break;
 
-                                        var nextOpt = map.board[nextPos.x, nextPos.y];
-                                        if (nextOpt.IsNone()) {
-                                            if (checker.type == ChType.Basic && dir.x != skipXDir) break;
-                                            moveCells.Add(nextPos);
-                                        } else {
-                                            var next = nextOpt.Peel();
-                                            if (next.color == checker.color) break;
+                                    var t = 0;
+                                    while (condition) {
+                                        t++;
 
-                                            var afterOnePos = nextPos + dir;
-                                            if (!IsOnBoard(afterOnePos, map.board)) break;
-                                            var afterOneOpt = map.board[afterOnePos.x, afterOnePos.y];
-                                            if (afterOneOpt.IsSome()) break;
-                                            for (var t = 1; t <= maxCount; t++) {
-                                                var afterNext = nextPos + dir * t;
-                                                if (!IsOnBoard(afterNext, map.board)) break;
-                                                var afterNextOpt = map.board[afterNext.x, afterNext.y];
-                                                if (afterNextOpt.IsSome()) break;
-                                                moveCells.Add(afterNext);
-                                            }
+                                        var aftNext = nextPos + dir * t;
+                                        if (!IsOnBoard(aftNext, map.board)) {
+                                            condition = false;
+                                            break;
+                                        }
+
+                                        var aftNextOpt = map.board[aftNext.x, aftNext.y];
+                                        if (aftNextOpt.IsSome()) {
+                                            condition = false;
+                                            break;
+                                        }
+
+                                        attackCells.Add(aftNext);
+                                        if (ch.type == ChType.Basic) {
+                                            condition = false;
                                         }
                                     }
                                 }
-                                chInfo.points = moveCells;
-                                chInfos.Add(new Vector2Int(i, j), chInfo);
+
+                                if (ch.type == ChType.Basic) break;
                             }
                         }
+
+                        chInfo.points = moveCells;
+                        if (attackCells.Count > 0) {
+                            onlyAttack = true;
+                            chInfo.attack = true;
+                            chInfo.points = attackCells;
+                        }
+
+                        chInfos.Add(new Vector2Int(i, j), chInfo);
+                    }
+                }
+            }
+
+            switch (playerAction) {
+                case PlayerAction.SelectChecker:
+                    selected = cell;
+                    if (onlyAttack && !chInfos[selected].attack) {
+                        playerAction = PlayerAction.None;
+                        return;
                     }
 
                     CreateMoveHighlights(chInfos[cell].points);
@@ -237,18 +247,95 @@ namespace controller {
                     var moves = chInfos[selected].points;
                     foreach (var emptyCell in moves) {
                         if (cell == emptyCell) {
-                            Relocate(selected, emptyCell);
-                            if (cell.x == 0 || cell.x == map.board.GetLength(0) - 1) {
-                                PromoteChecker(cell);
+                            nextAttack = false;
+                            var dif = cell - selected;
+                            var dir = new Vector2Int(
+                                dif.x/Mathf.Abs(dif.x),
+                                dif.y/Mathf.Abs(dif.y)
+                            );
+                            var moveLength = dif.magnitude / Mathf.Sqrt(2);
+
+                            map.board[cell.x, cell.y] = map.board[selected.x, selected.y];
+                            map.board[selected.x, selected.y] = Option<Checker>.None();
+                            var checker = checkerOpt.Peel();
+                            for (int i = 1; i < moveLength; i++) {
+                                var nextPos = selected + dir * i;
+
+                                var next = map.figures[nextPos.x, nextPos.y];
+                                if (next != null) {
+                                    Destroy(map.figures[nextPos.x, nextPos.y]);
+
+                                }
+
+                                var nextOpt = map.board[nextPos.x, nextPos.y];
+                                if (nextOpt.IsSome()) {
+                                    map.board[nextPos.x, nextPos.y] = Option<Checker>.None();
+                                }
+
+                                foreach (var direction in dirs) {
+                                    var j = 0;
+                                    while (true) {
+                                        j++;
+
+                                        var newNextPos = cell + direction * i;
+                                        if (!IsOnBoard(newNextPos, map.board)) break;
+
+                                        var newNextOpt = map.board[newNextPos.x, newNextPos.y];
+                                        if (newNextOpt.IsSome()) {
+                                            var newNext = newNextOpt.Peel();
+                                            if (newNext.color == moveClr) break;
+
+                                            var afterPos = newNextPos + direction;
+                                            if (!IsOnBoard(afterPos, map.board)) break;
+
+                                            var afterOpt = map.board[afterPos.x, afterPos.y];
+                                            if (afterOpt.IsNone()) {
+                                                nextAttack = true;
+                                                break;
+                                            }
+                                        }
+
+                                        if (checker.type == ChType.Basic) break;
+                                    }
+                                }
                             }
 
-                            if (moveColor == ChColor.White) {
-                                moveColor = ChColor.Black;
-                            } else {
-                                moveColor = ChColor.White;
+                            var x = -cell.y;
+                            var z = cell.x;
+                            var offset = resources.offset.localPosition;
+                            var leftTop = resources.leftTop.localPosition;
+                            var newPos = new Vector3(x, 0.5f, z) * 2 + leftTop - offset;
+                            map.figures[selected.x, selected.y].transform.localPosition = newPos;
+                            map.figures[cell.x, cell.y] = map.figures[selected.x, selected.y];
+
+                            if (cell.x == 0 || cell.x == map.board.GetLength(0) - 1) {
+                                var obj = resources.blackLady;
+                                if (moveClr == ChColor.White) {
+                                    obj = resources.whiteLady;
+                                }
+
+                                var lady = Option<Checker>.Some(Checker.Mk(moveClr, ChType.Lady));
+                                map.board[cell.x, cell.y] = lady;
+                                Destroy(map.figures[cell.x, cell.y]);
+
+                                var ladyObj = Instantiate(obj);
+                                ladyObj.transform.parent = resources.boardTransform;
+
+                                var pos = map.figures[cell.x, cell.y].transform.localPosition;
+                                ladyObj.transform.localPosition = pos;
+                                map.figures[cell.x, cell.y] = ladyObj;
+                            }
+
+                            if (!nextAttack) {
+                                if (moveClr == ChColor.White) {
+                                    moveClr = ChColor.Black;
+                                } else {
+                                    moveClr = ChColor.White;
+                                }
                             }
                         }
                     }
+
                     chInfos.Clear();
                     playerAction = PlayerAction.None;
                     break;
@@ -259,6 +346,7 @@ namespace controller {
             for (int i = 0; i < board.GetLength(0); i++) {
                 for (int j = 0; j < board.GetLength(1); j++) {
                     if (i > 2 && i < 5) continue;
+
                     if (i % 2 == 0 && j % 2 != 0 || i % 2 != 0 && j % 2 == 0) {
                         var color = ChColor.Black;
                         if (i >= 5) {
@@ -278,8 +366,8 @@ namespace controller {
                     if (board[i, j].IsNone()) {
                         continue;
                     }
-
                     var checker = board[i, j].Peel();
+
                     var prefab = resources.blackChecker;
                     if (checker.color == ChColor.White) {
                         prefab = resources.whiteChecker;
@@ -306,6 +394,7 @@ namespace controller {
             var leftTop = resources.leftTop.localPosition;
             var result = new List<GameObject>();
             var offset = resources.offset.localPosition;
+
             foreach (var possMove in possMoves) {
                 var x = -possMove.y;
                 var z = possMove.x;
@@ -316,22 +405,6 @@ namespace controller {
             }
         }
 
-        public void CheckerMove(Vector2Int from, Vector2Int to) {
-            var pos = from;
-            var dif = to - pos;
-            var dir = new Vector2Int(dif.x/Mathf.Abs(dif.x), dif.y/Mathf.Abs(dif.y));
-            var moveLength = dif.magnitude / Mathf.Sqrt(2);
-            for (int i = 1; i < moveLength; i++) {
-                var nextPos = pos + dir * i;
-                var nextOpt = map.board[nextPos.x, nextPos.y];
-                if (nextOpt.IsSome()) {
-                    map.board[nextPos.x, nextPos.y] = Option<Checker>.None();
-                }
-            }
-            map.board[to.x, to.y] = map.board[pos.x, pos.y];
-            map.board[pos.x, pos.y] = Option<Checker>.None();
-        }
-
         public bool IsOnBoard<T>(Vector2Int pos, Option<T>[,] board) {
             var size = new Vector2Int(board.GetLength(0), board.GetLength(1));
             if (pos.x < 0 || pos.y < 0 || pos.x >= size.x || pos.y >= size.y) {
@@ -339,50 +412,6 @@ namespace controller {
             }
 
             return true;
-        }
-
-        private void PromoteChecker(Vector2Int promotePos) {
-            var obj = resources.blackLady;
-            if (moveColor == ChColor.White) {
-                obj = resources.whiteLady;
-            }
-            var lady = Option<Checker>.Some(Checker.Mk(moveColor, ChType.Lady));
-            map.board[promotePos.x, promotePos.y] = lady;
-            var pos = map.figures[promotePos.x, promotePos.y].transform.localPosition;
-            Destroy(map.figures[promotePos.x, promotePos.y]);
-            var ladyObj = Instantiate(obj);
-            ladyObj.transform.parent = resources.boardTransform;
-            ladyObj.transform.localPosition = pos;
-            map.figures[promotePos.x, promotePos.y] = ladyObj;
-        }
-
-        private void Relocate(Vector2Int from, Vector2Int to) {
-            nextAttack = false;
-            var pos = from;
-            var dif = to - pos;
-            var dir = new Vector2Int(dif.x/Mathf.Abs(dif.x), dif.y/Mathf.Abs(dif.y));
-            var moveLength = dif.magnitude / Mathf.Sqrt(2);
-            var checkerOpt = map.board[pos.x, pos.y];
-            if (checkerOpt.IsNone()) {
-                Debug.LogError("No checker on pos");
-                return;
-            }
-            CheckerMove(from, to);
-            var checker = checkerOpt.Peel();
-            for (int i = 1; i < moveLength; i++) {
-                var nextPos = pos + dir * i;
-                var next = map.figures[nextPos.x, nextPos.y];
-                if (next != null) {
-                    Destroy(map.figures[nextPos.x, nextPos.y]);
-                }
-            }
-            var x = -to.y;
-            var z = to.x;
-            var offset = resources.offset.localPosition;
-            var leftTop = resources.leftTop.localPosition;
-            var newPos = new Vector3(x, 0.5f, z) * 2 + leftTop - offset;
-            map.figures[pos.x, pos.y].transform.localPosition = newPos;
-            map.figures[to.x, to.y] = map.figures[pos.x, pos.y];
         }
     }
 }
