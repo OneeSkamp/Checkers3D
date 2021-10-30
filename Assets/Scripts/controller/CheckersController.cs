@@ -23,9 +23,9 @@ namespace controller {
         }
     }
 
-    public struct ChInfo {
-        public bool attack;
-        public List<Vector2Int> points;
+    public struct MoveCell {
+        public Vector2Int point;
+        public bool isAttack;
     }
 
     public enum PlayerAction {
@@ -43,12 +43,12 @@ namespace controller {
         public Resources resources;
 
         private Map map;
-        private PlayerAction playerAction;
         private ChColor moveClr;
         private Option<Vector2Int> selected;
 
         private List<Vector2Int> attackCells = new List<Vector2Int>();
-        private Dictionary<Vector2Int, ChInfo> possibleMoves = new Dictionary<Vector2Int, ChInfo>();
+        private List<Vector2Int> dirs = new List<Vector2Int>();
+        private Dictionary<Vector2Int, List<MoveCell>> possibleMoves = new Dictionary<Vector2Int, List<MoveCell>>();
 
         private void Awake() {
             if (resources == null) {
@@ -105,6 +105,11 @@ namespace controller {
                 return;
             }
 
+            dirs.Add(new Vector2Int(1, 1));
+            dirs.Add(new Vector2Int(1, -1));
+            dirs.Add(new Vector2Int(-1, 1));
+            dirs.Add(new Vector2Int(-1, -1));
+
             map.figures = new GameObject[8, 8];
             map.board = new Option<Checker>[8, 8];
             FillBoard(map.board);
@@ -124,14 +129,64 @@ namespace controller {
 
             var cell = ToCell(hit.point, resources.leftTop.position);
 
-            if (map.board[cell.x, cell.y].IsSome() && map.board[cell.x, cell.y].Peel().color == moveClr) {
+            if (map.board[cell.x, cell.y].IsSome()) {
                 selected = Option<Vector2Int>.Some(cell);
             }
 
-            if (selected.IsSome()) {
-                var moveCells = possibleMoves[selected.Peel()].points;
-                foreach (var moveCell in moveCells) {
+            if (possibleMoves.Count == 0) {
+                for (int i = 0; i < map.board.GetLength(0); i++) {
+                    for (int j = 0; j < map.board.GetLength(1); j++) {
+                        var chOpt = map.board[i, j];
+                        if (chOpt.IsNone()) continue;
 
+                        var moveCell = new MoveCell();
+                        var moveCells = new List<MoveCell>();
+                        foreach (var dir in dirs) {
+                            var nextPos = new Vector2Int(i, j) + dir;
+                            if (!IsOnBoard(nextPos, map.board)) continue;
+                            var nextOpt = map.board[nextPos.x, nextPos.y];
+                            if (nextOpt.IsNone()) {
+                                moveCell.isAttack = false;
+                                moveCell.point = nextPos;
+                                moveCells.Add(moveCell);
+                            } else {
+                                var next = nextOpt.Peel();
+                                if (next.color == chOpt.Peel().color) continue;
+                                var afterNextPos = nextPos + dir;
+                                if (!IsOnBoard(afterNextPos, map.board)) continue;
+
+                                var afterNextOpt = map.board[afterNextPos.x, afterNextPos.y];
+                                if (afterNextOpt.IsNone()) {
+                                    moveCell.isAttack = true;
+                                    moveCell.point = afterNextPos;
+                                    moveCells.Add(moveCell);
+                                }
+                            }
+                        }
+
+                        possibleMoves.Add(new Vector2Int(i, j), moveCells);
+                    }
+                }
+            }
+
+            if (selected.IsSome()) {
+
+                var moveCells = possibleMoves[selected.Peel()];
+
+                // if (map.board[cell.x, cell.y].IsSome()) return;
+
+                foreach (var moveCell in moveCells) {
+                    Debug.Log(moveCell.point);
+                    if (moveCell.point == cell) {
+                        if (moveCell.isAttack) {
+                            //selected = Option<Vector2Int>.Some(cell);
+                            //possibleMoves.Clear();
+                        }
+
+                        if (!moveCell.isAttack) {
+
+                        }
+                    }
                 }
             }
         }
