@@ -37,13 +37,11 @@ namespace controller {
 
         private Map map;
         private ChColor moveClr;
-        private bool needAttack;
         private Option<Vector2Int> selected;
 
         private List<Vector2Int> dirs = new List<Vector2Int>();
+        private HashSet<Vector2Int> attacked = new HashSet<Vector2Int>();
         private Dictionary<Vector2Int, List<MoveCell>> possibleMoves;
-        private Dictionary<Vector2Int, Vector2Int> attackSegments =
-            new Dictionary<Vector2Int, Vector2Int>();
 
         private void Awake() {
             if (resources == null) {
@@ -160,19 +158,6 @@ namespace controller {
                                 var afterNextOpt = map.board[afterNextPos.x, afterNextPos.y];
                                 if (afterNextOpt.IsNone()) {
 
-                                    var repeat = false;
-                                    foreach (var attack in attackSegments) {
-                                        if (afterNextPos == attack.Key
-                                            || afterNextPos == attack.Value) {
-
-                                            repeat = true;
-                                            break;
-                                        }
-                                    }
-
-                                    if (repeat == true) continue;
- 
-                                    needAttack = true;
                                     moveCell.isAttack = true;
                                     moveCell.point = afterNextPos;
                                     moveCells.Add(moveCell);
@@ -183,52 +168,9 @@ namespace controller {
                         possibleMoves.Add(new Vector2Int(i, j), moveCells);
                     }
                 }
-
-                if (selected.IsSome()) {
-                    var moves = possibleMoves[selected.Peel()];
-                    var end = true;
-                    foreach (var move in moves) {
-                        if (move.isAttack) {
-                            end = false;
-                        }
-                    }
-
-                    if (end) {
-                        needAttack = false;
-                        selected = Option<Vector2Int>.None();
-                        possibleMoves = null;
-
-                        if (moveClr == ChColor.White) {
-                            moveClr = ChColor.Black;
-                        } else {
-                            moveClr = ChColor.White;
-                        }
-
-                        foreach (var attackSegment in attackSegments) {
-                            var dif = attackSegment.Value - attackSegment.Key;
-                            var dir = new Vector2Int(
-                                dif.x/Mathf.Abs(dif.x),
-                                dif.y/Mathf.Abs(dif.y)
-                            );
-
-                            var nextPos = attackSegment.Key + dir;
-                            if (!IsOnBoard(nextPos, map.board)) break;
-
-                            var next = map.figures[nextPos.x, nextPos.y];
-                            if (next != null) {
-                                map.board[nextPos.x, nextPos.y] = Option<Checker>.None();
-                                Destroy(map.figures[nextPos.x, nextPos.y]);
-                            }
-                        }
-                        attackSegments.Clear();
-
-                        return;
-                    }
-                }
             }
 
             if (map.board[cell.x, cell.y].IsSome()) {
-
                 var checkerOpt = map.board[cell.x, cell.y];
                 if (checkerOpt.IsSome()) {
                     var checker = checkerOpt.Peel();
@@ -237,16 +179,28 @@ namespace controller {
                     selected = Option<Vector2Int>.Some(cell);
                     var moveCells = possibleMoves[selected.Peel()];
                     foreach (var moveCell in moveCells) {
-                        if (needAttack && !moveCell.isAttack) continue;
                         var highlight = Instantiate(resources.moveHighlight);
                         highlight.transform.parent = resources.moveHighlights;
                         highlight.transform.localPosition = ToCenterCell(moveCell.point);
                     }
                 }
-            } else if(selected.IsSome()) {
+            }
+
+            if (selected.IsSome()) {
+                resources.select.SetActive(true);
+                resources.select.transform.parent = resources.boardTransform;
+                resources.select.transform.localPosition = ToCenterCell(selected.Peel());
+
                 var slct = selected.Peel();
                 if (map.board[cell.x, cell.y].IsNone()) {
                     var moveCells = possibleMoves[slct];
+                    var needAttack = false;
+                    foreach (var moveCell in moveCells) {
+                        if (moveCell.isAttack) {
+                            needAttack = true;
+                            break;
+                        }
+                    }
 
                     foreach (var moveCell in moveCells) {
                         if (needAttack && !moveCell.isAttack) continue;
@@ -261,7 +215,6 @@ namespace controller {
                             prefab.transform.localPosition = ToCenterCell(cell);
 
                             if (moveCell.isAttack) {
-                                attackSegments.Add(slct, moveCell.point);
                                 selected = Option<Vector2Int>.Some(moveCell.point);
                             } else {
                                 needAttack = false;
@@ -277,6 +230,10 @@ namespace controller {
                         }
                     }
                 }
+            }
+
+            if (selected.IsNone()) {
+                resources.select.SetActive(false);
             }
         }
 
@@ -324,7 +281,7 @@ namespace controller {
         public Vector3 ToCenterCell(Vector2Int cell) {
             var offset = resources.offset.localPosition;
             var leftTop = resources.leftTop.localPosition;
-            return new Vector3(-cell.y, 0.5f, cell.x) * 2 + leftTop - offset;
+            return new Vector3(-cell.y, 0.51f, cell.x) * 2 + leftTop - offset;
         }
 
         public Vector2Int ToCell(Vector3 globalPoint, Vector3 leftTopPos) {

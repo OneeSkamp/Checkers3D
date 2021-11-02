@@ -12,6 +12,7 @@ namespace controller {
         public GameObject whiteLady;
         public GameObject blackLady;
         public GameObject moveHighlight;
+        public GameObject select;
     }
 }
 
