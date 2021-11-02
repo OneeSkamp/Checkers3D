@@ -141,6 +141,7 @@ namespace controller {
                         foreach (var dir in dirs) {
                             var nextPos = new Vector2Int(i, j) + dir;
                             if (!IsOnBoard(nextPos, map.board)) continue;
+
                             var nextOpt = map.board[nextPos.x, nextPos.y];
                             if (nextOpt.IsNone()) {
                                 if (ch.color == ChColor.White && dir.x == 1) continue;
@@ -152,6 +153,7 @@ namespace controller {
                             } else {
                                 var next = nextOpt.Peel();
                                 if (next.color == chOpt.Peel().color) continue;
+
                                 var afterNextPos = nextPos + dir;
                                 if (!IsOnBoard(afterNextPos, map.board)) continue;
 
@@ -184,14 +186,14 @@ namespace controller {
 
                 if (selected.IsSome()) {
                     var moves = possibleMoves[selected.Peel()];
-                    var a = false;
+                    var end = true;
                     foreach (var move in moves) {
                         if (move.isAttack) {
-                            a = true;
+                            end = false;
                         }
                     }
 
-                    if (!a) {
+                    if (end) {
                         needAttack = false;
                         selected = Option<Vector2Int>.None();
                         possibleMoves = null;
@@ -201,10 +203,27 @@ namespace controller {
                         } else {
                             moveClr = ChColor.White;
                         }
+
+                        foreach (var attackSegment in attackSegments) {
+                            var dif = attackSegment.Value - attackSegment.Key;
+                            var dir = new Vector2Int(
+                                dif.x/Mathf.Abs(dif.x),
+                                dif.y/Mathf.Abs(dif.y)
+                            );
+
+                            var nextPos = attackSegment.Key + dir;
+                            if (!IsOnBoard(nextPos, map.board)) break;
+
+                            var next = map.figures[nextPos.x, nextPos.y];
+                            if (next != null) {
+                                map.board[nextPos.x, nextPos.y] = Option<Checker>.None();
+                                Destroy(map.figures[nextPos.x, nextPos.y]);
+                            }
+                        }
+                        attackSegments.Clear();
+
                         return;
-
                     }
-
                 }
             }
 
