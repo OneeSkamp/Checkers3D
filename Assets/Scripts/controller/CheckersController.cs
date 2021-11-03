@@ -1,3 +1,4 @@
+using System.IO.Compression;
 using UnityEngine;
 using System.Collections.Generic;
 using option;
@@ -110,6 +111,68 @@ namespace controller {
         }
 
         private void Update() {
+            if (selected.IsSome()) {
+                resources.select.SetActive(true);
+                resources.select.transform.parent = resources.boardTransform;
+                resources.select.transform.localPosition = ToCenterCell(selected.Peel());
+            } else {
+                resources.select.SetActive(false);
+            }
+
+            if (possibleMoves == null) {
+                possibleMoves = new Dictionary<Vector2Int, List<MoveCell>>();
+                for (int i = 0; i < map.board.GetLength(0); i++) {
+                    for (int j = 0; j < map.board.GetLength(1); j++) {
+                        var chPos = new Vector2Int(i, j);
+                        if (selected.IsSome()) {
+                            if (selected.Peel() != chPos) continue;
+                        }
+
+                        var chOpt = map.board[chPos.x, chPos.y];
+                        if (chOpt.IsNone() || chOpt.Peel().color != moveClr) continue;
+                        var ch = chOpt.Peel();
+
+                        var moves = new List<MoveCell>();
+                        foreach (var dir in dirs) {
+                            var nextIsSome = false;
+                            var nextPos = chPos + dir;
+                            while (IsOnBoard(nextPos, map.board)) {
+                                var nextOpt = map.board[nextPos.x, nextPos.y];
+                                var moveCell = new MoveCell();
+                                if (nextOpt.IsNone()) {
+                                    moveCell.isAttack = false;
+                                    if (nextIsSome) {
+                                        moveCell.isAttack = true;
+                                    }
+
+                                    moveCell.point = nextPos;
+                                    moves.Add(moveCell);
+                                } else {
+                                    if (selected.IsSome()) {
+                                        if (attacked.Contains(nextPos)) break;
+                                    }
+
+                                    var next = nextOpt.Peel();
+                                    if (next.color != ch.color) {
+                                        if (nextIsSome) break;
+                                        nextIsSome = true;
+                                        if (ch.type == ChType.Basic) {
+                                            nextPos += dir;
+                                            continue;
+                                        };
+                                    }
+                                }
+                                if (ch.type == ChType.Basic) break;
+                                nextPos += dir;
+                            }
+                            nextIsSome = false;
+                        }
+
+                        possibleMoves.Add(chPos, moves);
+                    }
+                }
+            }
+
             if (!Input.GetMouseButtonDown(0)) {
                 return;
             }
@@ -120,113 +183,122 @@ namespace controller {
                 return;
             }
 
-            var cell = ToCell(hit.point, resources.leftTop.position);
+            var clicked = ToCell(hit.point, resources.leftTop.position);
 
             foreach (Transform item in resources.moveHighlights) {
                 Destroy(item.gameObject);
             }
 
-            if (possibleMoves == null) {
-                possibleMoves = new Dictionary<Vector2Int, List<MoveCell>>();
-                for (int i = 0; i < map.board.GetLength(0); i++) {
-                    for (int j = 0; j < map.board.GetLength(1); j++) {
-                        var chOpt = map.board[i, j];
-                        if (chOpt.IsNone() || chOpt.Peel().color != moveClr) continue;
-                        var ch = chOpt.Peel();
-                        var moveCell = new MoveCell();
-
-                        var moveCells = new List<MoveCell>();
-                        foreach (var dir in dirs) {
-                            var nextPos = new Vector2Int(i, j) + dir;
-                            if (!IsOnBoard(nextPos, map.board)) continue;
-
-                            var nextOpt = map.board[nextPos.x, nextPos.y];
-                            if (nextOpt.IsNone()) {
-                                if (ch.color == ChColor.White && dir.x == 1) continue;
-                                if (ch.color == ChColor.Black && dir.x == -1) continue;
-
-                                moveCell.isAttack = false;
-                                moveCell.point = nextPos;
-                                moveCells.Add(moveCell);
-                            } else {
-                                var next = nextOpt.Peel();
-                                if (next.color == chOpt.Peel().color) continue;
-
-                                var afterNextPos = nextPos + dir;
-                                if (!IsOnBoard(afterNextPos, map.board)) continue;
-
-                                var afterNextOpt = map.board[afterNextPos.x, afterNextPos.y];
-                                if (afterNextOpt.IsNone()) {
-
-                                    moveCell.isAttack = true;
-                                    moveCell.point = afterNextPos;
-                                    moveCells.Add(moveCell);
-                                }
-                            }
-                        }
-
-                        possibleMoves.Add(new Vector2Int(i, j), moveCells);
-                    }
-                }
-            }
-
-            if (map.board[cell.x, cell.y].IsSome()) {
-                var checkerOpt = map.board[cell.x, cell.y];
-                if (checkerOpt.IsSome()) {
-                    var checker = checkerOpt.Peel();
-                    if (checker.color != moveClr) return;
-
-                    selected = Option<Vector2Int>.Some(cell);
-                    var moveCells = possibleMoves[selected.Peel()];
-                    foreach (var moveCell in moveCells) {
-                        var highlight = Instantiate(resources.moveHighlight);
-                        highlight.transform.parent = resources.moveHighlights;
-                        highlight.transform.localPosition = ToCenterCell(moveCell.point);
-                    }
-                }
+            var checkerOpt = map.board[clicked.x, clicked.y];
+            if (checkerOpt.IsSome() && checkerOpt.Peel().color == moveClr) {
+                selected = Option<Vector2Int>.Some(clicked);
             }
 
             if (selected.IsSome()) {
-                resources.select.SetActive(true);
-                resources.select.transform.parent = resources.boardTransform;
-                resources.select.transform.localPosition = ToCenterCell(selected.Peel());
+                var moveCells = possibleMoves[selected.Peel()];
 
                 var slct = selected.Peel();
-                if (map.board[cell.x, cell.y].IsNone()) {
-                    var moveCells = possibleMoves[slct];
+                if (map.board[clicked.x, clicked.y].IsNone()) {
                     var needAttack = false;
                     foreach (var moveCell in moveCells) {
                         if (moveCell.isAttack) {
                             needAttack = true;
-                            break;
                         }
                     }
 
                     foreach (var moveCell in moveCells) {
                         if (needAttack && !moveCell.isAttack) continue;
 
-                        if (moveCell.point == cell) {
-                            map.board[cell.x, cell.y] = map.board[slct.x, slct.y];
+                        if (moveCell.point == clicked) {
+                            map.board[clicked.x, clicked.y] = map.board[slct.x, slct.y];
                             map.board[slct.x, slct.y] = Option<Checker>.None();
 
                             var prefab = map.figures[slct.x, slct.y];
-                            map.figures[cell.x, cell.y] = prefab;
+                            map.figures[clicked.x, clicked.y] = prefab;
 
-                            prefab.transform.localPosition = ToCenterCell(cell);
+                            prefab.transform.localPosition = ToCenterCell(clicked);
+
+                            var dif = moveCell.point - selected.Peel();
+                            var attackDir = new Vector2Int(
+                                dif.x/Mathf.Abs(dif.x),
+                                dif.y/Mathf.Abs(dif.y)
+                            );
+
+                            var attackPos = selected.Peel() + attackDir;
+                            while (IsOnBoard(attackPos, map.board)) {
+                                if (attackPos == clicked) break;
+                                if (map.board[attackPos.x, attackPos.y].IsSome()) {
+                                    attacked.Add(attackPos);
+                                }
+
+                                attackPos += attackDir;
+                            }
 
                             if (moveCell.isAttack) {
-                                selected = Option<Vector2Int>.Some(moveCell.point);
-                            } else {
-                                needAttack = false;
-                                selected = Option<Vector2Int>.None();
-                                if (moveClr == ChColor.White) {
-                                    moveClr = ChColor.Black;
-                                } else {
-                                    moveClr = ChColor.White;
+                                var chOpt = map.board[moveCell.point.x, moveCell.point.y];
+                                if (chOpt.IsNone() || chOpt.Peel().color != moveClr) continue;
+                                var ch = chOpt.Peel();
+
+                                var moves = new List<MoveCell>();
+                                foreach (var dir in dirs) {
+                                    var nextIsSome = false;
+                                    var nextPos = moveCell.point + dir;
+                                    while (IsOnBoard(nextPos, map.board)) {
+                                        var nextOpt = map.board[nextPos.x, nextPos.y];
+                                        var move = new MoveCell();
+                                        if (nextOpt.IsNone()) {
+                                            move.isAttack = false;
+                                            if (nextIsSome) {
+                                                move.isAttack = true;
+                                            }
+
+                                            move.point = nextPos;
+                                            moves.Add(move);
+                                        } else {
+                                            if (selected.IsSome()) {
+                                                if (attacked.Contains(nextPos)) break;
+                                            }
+
+                                            var next = nextOpt.Peel();
+                                            if (next.color != ch.color) {
+                                                if (nextIsSome) break;
+                                                nextIsSome = true;
+                                                if (ch.type == ChType.Basic) {
+                                                    nextPos += dir;
+                                                    continue;
+                                                };
+                                            }
+                                        }
+                                        if (ch.type == ChType.Basic) break;
+                                        nextPos += dir;
+                                    }
+                                    nextIsSome = false;
+                                }
+
+                                foreach (var mv in moves) {
+                                    if (mv.isAttack) {
+                                        possibleMoves.Clear();
+                                        possibleMoves.Add(moveCell.point, moves);
+                                        selected = Option<Vector2Int>.Some(moveCell.point);
+                                        return;
+                                    }
                                 }
                             }
 
+                            foreach (var attack in attacked) {
+                                Destroy(map.figures[attack.x, attack.y]);
+                                map.board[attack.x, attack.y] = Option<Checker>.None();
+                            }
+
+                            attacked.Clear();
+                            selected = Option<Vector2Int>.None();
+                            if (moveClr == ChColor.White) {
+                                moveClr = ChColor.Black;
+                            } else {
+                                moveClr = ChColor.White;
+                            }
                             possibleMoves = null;
+                            return;
                         }
                     }
                 }
