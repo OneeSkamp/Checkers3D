@@ -132,40 +132,34 @@ namespace controller {
                         if (chOpt.IsNone() || chOpt.Peel().color != moveClr) continue;
                         var ch = chOpt.Peel();
 
+                        var xDir = -1;
+                        if (ch.color == ChColor.Black) {
+                            xDir = 1;
+                        }
+
                         var moves = new List<MoveCell>();
                         foreach (var dir in dirs) {
-                            var nextIsSome = false;
+                            var checkerFound = false;
                             var nextPos = chPos + dir;
                             while (IsOnBoard(nextPos, map.board)) {
                                 var nextOpt = map.board[nextPos.x, nextPos.y];
-                                var moveCell = new MoveCell();
                                 if (nextOpt.IsNone()) {
-                                    moveCell.isAttack = false;
-                                    if (nextIsSome) {
-                                        moveCell.isAttack = true;
-                                    }
-
+                                    var wrongDir = xDir != dir.x && ch.type == ChType.Basic;
+                                    if (!checkerFound && wrongDir) break;
+                                    var moveCell = new MoveCell();
+                                    moveCell.isAttack = checkerFound;
                                     moveCell.point = nextPos;
                                     moves.Add(moveCell);
+                                    if (ch.type == ChType.Basic) break;
                                 } else {
-                                    if (selected.IsSome()) {
-                                        if (attacked.Contains(nextPos)) break;
-                                    }
-
                                     var next = nextOpt.Peel();
-                                    if (next.color != ch.color) {
-                                        if (nextIsSome) break;
-                                        nextIsSome = true;
-                                        if (ch.type == ChType.Basic) {
-                                            nextPos += dir;
-                                            continue;
-                                        };
-                                    }
+                                    if (next.color == ch.color || checkerFound) break;
+                                    checkerFound = true;
                                 }
-                                if (ch.type == ChType.Basic) break;
+                                if (ch.type == ChType.Basic && !checkerFound) break;
                                 nextPos += dir;
                             }
-                            nextIsSome = false;
+                            checkerFound = false;
                         }
 
                         possibleMoves.Add(chPos, moves);
@@ -196,15 +190,25 @@ namespace controller {
 
             if (selected.IsSome()) {
                 var moveCells = possibleMoves[selected.Peel()];
+                var needAttack = false;
+                foreach (var moves in possibleMoves) {
+                    foreach (var move in moves.Value) {
+                        if (move.isAttack) {
+                            needAttack = true;
+                            break;
+                        }
+                    }
+                }
+
+                foreach (var moveCell in moveCells) {
+                    if (needAttack && !moveCell.isAttack) continue;
+                    var highlight = Instantiate(resources.moveHighlight);
+                    highlight.transform.parent = resources.moveHighlights;
+                    highlight.transform.localPosition = ToCenterCell(moveCell.point);
+                }
 
                 var slct = selected.Peel();
                 if (map.board[clicked.x, clicked.y].IsNone()) {
-                    var needAttack = false;
-                    foreach (var moveCell in moveCells) {
-                        if (moveCell.isAttack) {
-                            needAttack = true;
-                        }
-                    }
 
                     foreach (var moveCell in moveCells) {
                         if (needAttack && !moveCell.isAttack) continue;
@@ -217,6 +221,22 @@ namespace controller {
                             map.figures[clicked.x, clicked.y] = prefab;
 
                             prefab.transform.localPosition = ToCenterCell(clicked);
+
+                            var checker = map.board[clicked.x, clicked.y].Peel();
+                            if (clicked.x == 0 || clicked.x == map.board.GetLength(0) - 1) {
+                                var obj = resources.blackLady;
+                                if (moveClr == ChColor.White) {
+                                    obj = resources.whiteLady;
+                                }
+                                var lady = Option<Checker>.Some(Checker.Mk(moveClr, ChType.Lady));
+                                map.board[clicked.x, clicked.y] = lady;
+                                var pos = map.figures[clicked.x, clicked.y].transform.localPosition;
+                                Destroy(map.figures[clicked.x, clicked.y]);
+                                var ladyObj = Instantiate(obj);
+                                ladyObj.transform.parent = resources.boardTransform;
+                                ladyObj.transform.localPosition = pos;
+                                map.figures[clicked.x, clicked.y] = ladyObj;
+                            }
 
                             var dif = moveCell.point - selected.Peel();
                             var attackDir = new Vector2Int(
@@ -241,38 +261,28 @@ namespace controller {
 
                                 var moves = new List<MoveCell>();
                                 foreach (var dir in dirs) {
-                                    var nextIsSome = false;
+                                    var checkerFound = false;
                                     var nextPos = moveCell.point + dir;
                                     while (IsOnBoard(nextPos, map.board)) {
                                         var nextOpt = map.board[nextPos.x, nextPos.y];
-                                        var move = new MoveCell();
-                                        if (nextOpt.IsNone()) {
-                                            move.isAttack = false;
-                                            if (nextIsSome) {
-                                                move.isAttack = true;
-                                            }
 
+                                        if (nextOpt.IsSome()) {
+                                            if (checkerFound) break;
+                                            var next = nextOpt.Peel();
+                                            if (attacked.Contains(nextPos)) break;
+                                            if (next.color == ch.color) break;
+                                            checkerFound = true;
+                                        } else if (nextOpt.IsNone() && checkerFound) {
+                                            var move = new MoveCell();
+                                            move.isAttack = true;
                                             move.point = nextPos;
                                             moves.Add(move);
-                                        } else {
-                                            if (selected.IsSome()) {
-                                                if (attacked.Contains(nextPos)) break;
-                                            }
-
-                                            var next = nextOpt.Peel();
-                                            if (next.color != ch.color) {
-                                                if (nextIsSome) break;
-                                                nextIsSome = true;
-                                                if (ch.type == ChType.Basic) {
-                                                    nextPos += dir;
-                                                    continue;
-                                                };
-                                            }
+                                            if (ch.type == ChType.Basic) break;
                                         }
-                                        if (ch.type == ChType.Basic) break;
+
+                                        if (ch.type == ChType.Basic && !checkerFound) break;
                                         nextPos += dir;
                                     }
-                                    nextIsSome = false;
                                 }
 
                                 foreach (var mv in moves) {
