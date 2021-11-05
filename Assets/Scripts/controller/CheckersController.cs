@@ -188,6 +188,11 @@ namespace controller {
                 selected = Option<Vector2Int>.Some(clicked);
             }
 
+            if (possibleMoves.Count == 0) {
+                Debug.Log("end");
+                this.enabled = false;
+            }
+
             if (selected.IsSome()) {
                 var moveCells = possibleMoves[selected.Peel()];
                 var needAttack = false;
