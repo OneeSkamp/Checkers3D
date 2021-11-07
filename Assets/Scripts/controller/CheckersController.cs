@@ -1,7 +1,9 @@
-using System.IO.Compression;
 using UnityEngine;
 using System.Collections.Generic;
 using option;
+using jonson;
+using jonson.reflect;
+using System.IO;
 
 namespace controller {
     public enum ChColor {
@@ -12,6 +14,17 @@ namespace controller {
     public enum ChType {
         Basic,
         Lady
+    }
+
+    public struct Save {
+        public ChColor moveClr;
+        public List<SaveChecker> board;
+    }
+
+    public struct SaveChecker {
+        public Checker checker;
+        public int posX;
+        public int posY;
     }
 
     public struct Checker {
@@ -183,34 +196,38 @@ namespace controller {
                 Destroy(item.gameObject);
             }
 
-            var checkerOpt = map.board[clicked.x, clicked.y];
-            if (checkerOpt.IsSome() && checkerOpt.Peel().color == moveClr) {
-                selected = Option<Vector2Int>.Some(clicked);
-            }
-
-            if (possibleMoves.Count == 0) {
-                Debug.Log("end");
-                this.enabled = false;
-            }
-
-            if (selected.IsSome()) {
-                var moveCells = possibleMoves[selected.Peel()];
-                var needAttack = false;
-                foreach (var moves in possibleMoves) {
-                    foreach (var move in moves.Value) {
-                        if (move.isAttack) {
-                            needAttack = true;
-                            break;
-                        }
+            var needAttack = false;
+            foreach (var moves in possibleMoves) {
+                foreach (var move in moves.Value) {
+                    if (move.isAttack) {
+                        needAttack = true;
+                        break;
                     }
                 }
+            }
 
+            var checkerOpt = map.board[clicked.x, clicked.y];
+            if (checkerOpt.IsSome() && checkerOpt.Peel().color == moveClr) {
+                if (!possibleMoves.ContainsKey(clicked)) return;
+
+                selected = Option<Vector2Int>.Some(clicked);
+                var moveCells = possibleMoves[selected.Peel()];
                 foreach (var moveCell in moveCells) {
                     if (needAttack && !moveCell.isAttack) continue;
                     var highlight = Instantiate(resources.moveHighlight);
                     highlight.transform.parent = resources.moveHighlights;
                     highlight.transform.localPosition = ToCenterCell(moveCell.point);
                 }
+            }
+
+            if (possibleMoves.Count == 0) {
+                resources.menu.SetActive(!resources.menu.activeSelf);
+                this.enabled = !this.enabled;
+            }
+
+            if (selected.IsSome()) {
+                var moveCells = possibleMoves[selected.Peel()];
+
 
                 var slct = selected.Peel();
                 if (map.board[clicked.x, clicked.y].IsNone()) {
@@ -290,6 +307,13 @@ namespace controller {
                                     }
                                 }
 
+                                foreach (var mc in moves) {
+                                    if (needAttack && !moveCell.isAttack) continue;
+                                    var highlight = Instantiate(resources.moveHighlight);
+                                    highlight.transform.parent = resources.moveHighlights;
+                                    highlight.transform.localPosition = ToCenterCell(mc.point);
+                                }
+
                                 foreach (var mv in moves) {
                                     if (mv.isAttack) {
                                         possibleMoves.Clear();
@@ -341,8 +365,6 @@ namespace controller {
         }
 
         private void FillCheckers(Option<Checker>[,] board) {
-            var leftTop = resources.leftTop.localPosition;
-            var offset = resources.offset.localPosition;
             for (int i = 0; i < board.GetLength(0); i++) {
                 for (int j = 0; j < board.GetLength(1); j++) {
                     if (board[i, j].IsNone()) {
@@ -357,8 +379,7 @@ namespace controller {
 
                     var checkerObj = Instantiate(prefab);
                     checkerObj.transform.parent = resources.boardTransform;
-                    var newPos = new Vector3(-j, 0.5f, i) * 2 + leftTop - offset;
-                    checkerObj.transform.localPosition = newPos;
+                    checkerObj.transform.localPosition = ToCenterCell(new Vector2Int(i, j));
 
                     map.figures[i, j] = checkerObj;
                 }
@@ -375,6 +396,60 @@ namespace controller {
             var point = resources.boardTransform.InverseTransformPoint(globalPoint);
             var intermediate = (point - new Vector3(-leftTopPos.x, 0f, leftTopPos.z)) / 2;
             return new Vector2Int(Mathf.Abs((int)intermediate.z), Mathf.Abs((int)intermediate.x));
+        }
+
+        public void SaveGame(string puth) {
+            var cells = new List<SaveChecker>();
+            for (int i = 0; i < map.board.GetLength(0); i++) {
+                for (int j = 0; j < map.board.GetLength(1); j++) {
+                    if (map.board[i, j].IsSome()) {
+                        var saveChecker = new SaveChecker();
+                        saveChecker.checker = map.board[i, j].Peel();
+                        saveChecker.posX = i;
+                        saveChecker.posY = j;
+                        cells.Add(saveChecker);
+                    }
+                }
+            }
+
+            var save = new Save();
+            save.moveClr = moveClr;
+            save.board = cells;
+            var type = Reflect.ToJSON(save, false);
+            string output = Jonson.Generate(type);
+            File.WriteAllText(puth, output);
+            resources.menu.SetActive(!resources.menu.activeSelf);
+            this.enabled = !this.enabled;
+        }
+
+        public Save FromJson(string puth) {
+            var str = File.ReadAllText(puth);
+            var save = new Save();
+            var type = Jonson.Parse(str, 1024);
+            return Reflect.FromJSON(save, type.AsOk());
+        }
+
+        public void LoadGame(string puth) {
+            var save = FromJson(puth);
+            moveClr = save.moveClr;
+            map.board = new Option<Checker>[8, 8];
+            possibleMoves = null;
+            foreach (var obj in map.figures) {
+                Destroy(obj);
+            }
+
+            foreach (var checker in save.board) {
+                map.board[checker.posX, checker.posY] = Option<Checker>.Some(checker.checker);
+            }
+
+            FillCheckers(map.board);
+            resources.menu.SetActive(!resources.menu.activeSelf);
+            this.enabled = !this.enabled;
+        }
+
+        public void OpenMenu() {
+            resources.menu.SetActive(!resources.menu.activeSelf);
+            this.enabled = !this.enabled;
         }
 
         public bool IsOnBoard<T>(Vector2Int pos, Option<T>[,] board) {

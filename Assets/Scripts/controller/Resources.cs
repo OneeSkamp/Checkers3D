@@ -13,6 +13,7 @@ namespace controller {
         public GameObject blackLady;
         public GameObject moveHighlight;
         public GameObject select;
+        public GameObject menu;
     }
 }
 
