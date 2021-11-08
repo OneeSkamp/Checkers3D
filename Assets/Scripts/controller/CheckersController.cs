@@ -39,6 +39,10 @@ namespace controller {
     public struct MoveCell {
         public Vector2Int point;
         public bool isAttack;
+
+        public static MoveCell Mk(Vector2Int point, bool isAttack) {
+            return new MoveCell { point = point, isAttack = isAttack };
+        }
     }
 
     public struct Map {
@@ -48,6 +52,10 @@ namespace controller {
 
     public class CheckersController : MonoBehaviour {
         public Resources resources;
+        public GameObject selectedHighlight;
+        public GameObject menu;
+
+        private Transform moveHighlights;
 
         private Map map;
         private ChColor moveClr;
@@ -72,12 +80,6 @@ namespace controller {
 
             if (resources.leftTop == null) {
                 Debug.LogError("Left top isn't provided");
-                this.enabled = false;
-                return;
-            }
-
-            if (resources.moveHighlights == null) {
-                Debug.LogError("Move highlights isn't provided");
                 this.enabled = false;
                 return;
             }
@@ -121,25 +123,19 @@ namespace controller {
             map.board = new Option<Checker>[8, 8];
             FillBoard(map.board);
             FillCheckers(map.board);
+
+            var highlightsObj = new GameObject();
+            highlightsObj.name = "Highlights";
+            highlightsObj.transform.parent = resources.boardTransform;
+            moveHighlights = highlightsObj.transform;
         }
 
         private void Update() {
-            if (selected.IsSome()) {
-                resources.select.SetActive(true);
-                resources.select.transform.parent = resources.boardTransform;
-                resources.select.transform.localPosition = ToCenterCell(selected.Peel());
-            } else {
-                resources.select.SetActive(false);
-            }
-
             if (possibleMoves == null) {
                 possibleMoves = new Dictionary<Vector2Int, List<MoveCell>>();
                 for (int i = 0; i < map.board.GetLength(0); i++) {
                     for (int j = 0; j < map.board.GetLength(1); j++) {
                         var chPos = new Vector2Int(i, j);
-                        if (selected.IsSome()) {
-                            if (selected.Peel() != chPos) continue;
-                        }
 
                         var chOpt = map.board[chPos.x, chPos.y];
                         if (chOpt.IsNone() || chOpt.Peel().color != moveClr) continue;
@@ -159,10 +155,7 @@ namespace controller {
                                 if (nextOpt.IsNone()) {
                                     var wrongDir = xDir != dir.x && ch.type == ChType.Basic;
                                     if (!checkerFound && wrongDir) break;
-                                    var moveCell = new MoveCell();
-                                    moveCell.isAttack = checkerFound;
-                                    moveCell.point = nextPos;
-                                    moves.Add(moveCell);
+                                    moves.Add(MoveCell.Mk(nextPos, checkerFound));
                                     if (ch.type == ChType.Basic) break;
                                 } else {
                                     var next = nextOpt.Peel();
@@ -192,7 +185,7 @@ namespace controller {
 
             var clicked = ToCell(hit.point, resources.leftTop.position);
 
-            foreach (Transform item in resources.moveHighlights) {
+            foreach (Transform item in moveHighlights) {
                 Destroy(item.gameObject);
             }
 
@@ -215,19 +208,22 @@ namespace controller {
                 foreach (var moveCell in moveCells) {
                     if (needAttack && !moveCell.isAttack) continue;
                     var highlight = Instantiate(resources.moveHighlight);
-                    highlight.transform.parent = resources.moveHighlights;
+                    highlight.transform.parent = moveHighlights;
                     highlight.transform.localPosition = ToCenterCell(moveCell.point);
                 }
+
+                var selectHighlight = Instantiate(selectedHighlight);
+                selectHighlight.transform.parent = moveHighlights;
+                selectHighlight.transform.localPosition = ToCenterCell(selected.Peel());
             }
 
             if (possibleMoves.Count == 0) {
-                resources.menu.SetActive(!resources.menu.activeSelf);
+                menu.SetActive(!menu.activeSelf);
                 this.enabled = !this.enabled;
             }
 
             if (selected.IsSome()) {
                 var moveCells = possibleMoves[selected.Peel()];
-
 
                 var slct = selected.Peel();
                 if (map.board[clicked.x, clicked.y].IsNone()) {
@@ -295,10 +291,7 @@ namespace controller {
                                             if (next.color == ch.color) break;
                                             checkerFound = true;
                                         } else if (nextOpt.IsNone() && checkerFound) {
-                                            var move = new MoveCell();
-                                            move.isAttack = true;
-                                            move.point = nextPos;
-                                            moves.Add(move);
+                                            moves.Add(MoveCell.Mk(nextPos, true));
                                             if (ch.type == ChType.Basic) break;
                                         }
 
@@ -310,41 +303,46 @@ namespace controller {
                                 foreach (var mc in moves) {
                                     if (needAttack && !moveCell.isAttack) continue;
                                     var highlight = Instantiate(resources.moveHighlight);
-                                    highlight.transform.parent = resources.moveHighlights;
+                                    highlight.transform.parent = moveHighlights;
                                     highlight.transform.localPosition = ToCenterCell(mc.point);
                                 }
 
+                                selected = Option<Vector2Int>.None();
                                 foreach (var mv in moves) {
                                     if (mv.isAttack) {
                                         possibleMoves.Clear();
                                         possibleMoves.Add(moveCell.point, moves);
                                         selected = Option<Vector2Int>.Some(moveCell.point);
-                                        return;
+
+                                        var slctObj = Instantiate(selectedHighlight);
+                                        slctObj.transform.parent = moveHighlights;
+                                        slctObj.transform.localPosition = ToCenterCell(
+                                            selected.Peel()
+                                        );
+                                        break;
                                     }
                                 }
-                            }
-
-                            foreach (var attack in attacked) {
-                                Destroy(map.figures[attack.x, attack.y]);
-                                map.board[attack.x, attack.y] = Option<Checker>.None();
-                            }
-
-                            attacked.Clear();
-                            selected = Option<Vector2Int>.None();
-                            if (moveClr == ChColor.White) {
-                                moveClr = ChColor.Black;
                             } else {
-                                moveClr = ChColor.White;
+                                selected = Option<Vector2Int>.None();
                             }
-                            possibleMoves = null;
-                            return;
+
+                            if (selected.IsNone()) {
+                                foreach (var attack in attacked) {
+                                    Destroy(map.figures[attack.x, attack.y]);
+                                    map.board[attack.x, attack.y] = Option<Checker>.None();
+                                }
+
+                                attacked.Clear();
+                                if (moveClr == ChColor.White) {
+                                    moveClr = ChColor.Black;
+                                } else {
+                                    moveClr = ChColor.White;
+                                }
+                                possibleMoves = null;
+                            }
                         }
                     }
                 }
-            }
-
-            if (selected.IsNone()) {
-                resources.select.SetActive(false);
             }
         }
 
@@ -398,7 +396,11 @@ namespace controller {
             return new Vector2Int(Mathf.Abs((int)intermediate.z), Mathf.Abs((int)intermediate.x));
         }
 
-        public void SaveGame(string puth) {
+        public void SaveGame(string path) {
+            if (path == null) {
+                Debug.LogError("Path is null");
+            }
+
             var cells = new List<SaveChecker>();
             for (int i = 0; i < map.board.GetLength(0); i++) {
                 for (int j = 0; j < map.board.GetLength(1); j++) {
@@ -417,23 +419,32 @@ namespace controller {
             save.board = cells;
             var type = Reflect.ToJSON(save, false);
             string output = Jonson.Generate(type);
-            File.WriteAllText(puth, output);
-            resources.menu.SetActive(!resources.menu.activeSelf);
+            File.WriteAllText(path, output);
+            menu.SetActive(!menu.activeSelf);
             this.enabled = !this.enabled;
         }
 
-        public Save FromJson(string puth) {
-            var str = File.ReadAllText(puth);
+        public Save FromJson(string path) {
+            if (path == null) {
+                Debug.LogError("Path is null");
+            }
+
+            var str = File.ReadAllText(path);
             var save = new Save();
             var type = Jonson.Parse(str, 1024);
             return Reflect.FromJSON(save, type.AsOk());
         }
 
-        public void LoadGame(string puth) {
-            var save = FromJson(puth);
+        public void LoadGame(string path) {
+            if (path == null) {
+                Debug.LogError("Path is null");
+            }
+
+            var save = FromJson(path);
             moveClr = save.moveClr;
             map.board = new Option<Checker>[8, 8];
             possibleMoves = null;
+            selected = Option<Vector2Int>.None();
             foreach (var obj in map.figures) {
                 Destroy(obj);
             }
@@ -443,12 +454,12 @@ namespace controller {
             }
 
             FillCheckers(map.board);
-            resources.menu.SetActive(!resources.menu.activeSelf);
+            menu.SetActive(!menu.activeSelf);
             this.enabled = !this.enabled;
         }
 
         public void OpenMenu() {
-            resources.menu.SetActive(!resources.menu.activeSelf);
+            menu.SetActive(!menu.activeSelf);
             this.enabled = !this.enabled;
         }
 
