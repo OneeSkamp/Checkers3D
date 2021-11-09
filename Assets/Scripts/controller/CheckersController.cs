@@ -1,4 +1,6 @@
+using System;
 using UnityEngine;
+using UnityEngine.UI;
 using System.Collections.Generic;
 using option;
 using jonson;
@@ -53,9 +55,13 @@ namespace controller {
     public class CheckersController : MonoBehaviour {
         public Resources resources;
         public GameObject selectedHighlight;
+        public InputField saveInputField;
+        public GameObject loadPanel;
+        public GameObject savePanel;
         public GameObject menu;
+        public GameObject loadItem;
 
-        private Transform moveHighlights;
+        private GameObject highlightsObj;
 
         private Map map;
         private ChColor moveClr;
@@ -124,10 +130,10 @@ namespace controller {
             FillBoard(map.board);
             FillCheckers(map.board);
 
-            var highlightsObj = new GameObject();
+            highlightsObj = new GameObject();
             highlightsObj.name = "Highlights";
             highlightsObj.transform.parent = resources.boardTransform;
-            moveHighlights = highlightsObj.transform;
+            highlightsObj.transform.localRotation = Quaternion.Euler(0f, 0f, 0f);
         }
 
         private void Update() {
@@ -167,10 +173,14 @@ namespace controller {
                             }
                             checkerFound = false;
                         }
-
                         possibleMoves.Add(chPos, moves);
                     }
                 }
+            }
+
+            if (possibleMoves.Count == 0) {
+                menu.SetActive(true);
+                this.enabled = false;
             }
 
             if (!Input.GetMouseButtonDown(0)) {
@@ -185,7 +195,7 @@ namespace controller {
 
             var clicked = ToCell(hit.point, resources.leftTop.position);
 
-            foreach (Transform item in moveHighlights) {
+            foreach (Transform item in highlightsObj.transform) {
                 Destroy(item.gameObject);
             }
 
@@ -208,19 +218,15 @@ namespace controller {
                 foreach (var moveCell in moveCells) {
                     if (needAttack && !moveCell.isAttack) continue;
                     var highlight = Instantiate(resources.moveHighlight);
-                    highlight.transform.parent = moveHighlights;
+                    highlight.transform.parent = highlightsObj.transform;
                     highlight.transform.localPosition = ToCenterCell(moveCell.point);
                 }
 
                 var selectHighlight = Instantiate(selectedHighlight);
-                selectHighlight.transform.parent = moveHighlights;
+                selectHighlight.transform.parent = highlightsObj.transform;
                 selectHighlight.transform.localPosition = ToCenterCell(selected.Peel());
             }
 
-            if (possibleMoves.Count == 0) {
-                menu.SetActive(!menu.activeSelf);
-                this.enabled = !this.enabled;
-            }
 
             if (selected.IsSome()) {
                 var moveCells = possibleMoves[selected.Peel()];
@@ -256,10 +262,10 @@ namespace controller {
                                 map.figures[clicked.x, clicked.y] = ladyObj;
                             }
 
-                            var dif = moveCell.point - selected.Peel();
+                            var vectorDif = moveCell.point - selected.Peel();
                             var attackDir = new Vector2Int(
-                                dif.x/Mathf.Abs(dif.x),
-                                dif.y/Mathf.Abs(dif.y)
+                                vectorDif.x/Mathf.Abs(vectorDif.x),
+                                vectorDif.y/Mathf.Abs(vectorDif.y)
                             );
 
                             var attackPos = selected.Peel() + attackDir;
@@ -303,7 +309,7 @@ namespace controller {
                                 foreach (var mc in moves) {
                                     if (needAttack && !moveCell.isAttack) continue;
                                     var highlight = Instantiate(resources.moveHighlight);
-                                    highlight.transform.parent = moveHighlights;
+                                    highlight.transform.parent = highlightsObj.transform;
                                     highlight.transform.localPosition = ToCenterCell(mc.point);
                                 }
 
@@ -315,7 +321,7 @@ namespace controller {
                                         selected = Option<Vector2Int>.Some(moveCell.point);
 
                                         var slctObj = Instantiate(selectedHighlight);
-                                        slctObj.transform.parent = moveHighlights;
+                                        slctObj.transform.parent = highlightsObj.transform;
                                         slctObj.transform.localPosition = ToCenterCell(
                                             selected.Peel()
                                         );
@@ -371,8 +377,15 @@ namespace controller {
                     var checker = board[i, j].Peel();
 
                     var prefab = resources.blackChecker;
+                    if (checker.type == ChType.Lady) {
+                        prefab = resources.blackLady;
+                    }
+
                     if (checker.color == ChColor.White) {
                         prefab = resources.whiteChecker;
+                        if (checker.type == ChType.Lady) {
+                            prefab = resources.whiteLady;
+                        }
                     }
 
                     var checkerObj = Instantiate(prefab);
@@ -396,32 +409,44 @@ namespace controller {
             return new Vector2Int(Mathf.Abs((int)intermediate.z), Mathf.Abs((int)intermediate.x));
         }
 
-        public void SaveGame(string path) {
-            if (path == null) {
-                Debug.LogError("Path is null");
-            }
+        public void OpenSavePanel() {
+            menu.SetActive(false);
+            loadPanel.SetActive(false);
+            savePanel.SetActive(true);
+            this.enabled = false;
+        }
 
-            var cells = new List<SaveChecker>();
-            for (int i = 0; i < map.board.GetLength(0); i++) {
-                for (int j = 0; j < map.board.GetLength(1); j++) {
-                    if (map.board[i, j].IsSome()) {
-                        var saveChecker = new SaveChecker();
-                        saveChecker.checker = map.board[i, j].Peel();
-                        saveChecker.posX = i;
-                        saveChecker.posY = j;
-                        cells.Add(saveChecker);
+        public void Save(string defaultPath) {
+            var path = defaultPath + saveInputField.text + ".txt";
+            File.Create(path).Dispose();
+
+            try {
+                var cells = new List<SaveChecker>();
+                for (int i = 0; i < map.board.GetLength(0); i++) {
+                    for (int j = 0; j < map.board.GetLength(1); j++) {
+                        if (map.board[i, j].IsSome()) {
+                            var saveChecker = new SaveChecker();
+                            saveChecker.checker = map.board[i, j].Peel();
+                            saveChecker.posX = i;
+                            saveChecker.posY = j;
+                            cells.Add(saveChecker);
+                        }
                     }
                 }
+                var save = new Save();
+                save.moveClr = moveClr;
+                save.board = cells;
+                var type = Reflect.ToJSON(save, false);
+                string output = Jonson.Generate(type);
+                File.WriteAllText(path, output);
+            } catch (FileNotFoundException e) {
+                Debug.LogError(e);
+                return;
             }
 
-            var save = new Save();
-            save.moveClr = moveClr;
-            save.board = cells;
-            var type = Reflect.ToJSON(save, false);
-            string output = Jonson.Generate(type);
-            File.WriteAllText(path, output);
-            menu.SetActive(!menu.activeSelf);
-            this.enabled = !this.enabled;
+            menu.SetActive(false);
+            savePanel.SetActive(false);
+            this.enabled = true;
         }
 
         public Save FromJson(string path) {
@@ -429,10 +454,59 @@ namespace controller {
                 Debug.LogError("Path is null");
             }
 
-            var str = File.ReadAllText(path);
-            var save = new Save();
-            var type = Jonson.Parse(str, 1024);
-            return Reflect.FromJSON(save, type.AsOk());
+            try {
+                var str = File.ReadAllText(path);
+                var save = new Save();
+                var type = Jonson.Parse(str, 1024);
+                return Reflect.FromJSON(save, type.AsOk());
+            } catch (Exception e) {
+                Debug.LogError(e);
+                return default(Save);
+            }
+        }
+
+        public void OpenLoadPanel(string pathToFolder) {
+            if (pathToFolder == null) {
+                Debug.LogError("Path is null");
+            }
+
+            menu.SetActive(false);
+            savePanel.SetActive(false);
+            loadPanel.SetActive(true);
+            this.enabled = false;
+
+            try {
+                foreach (Transform item in loadPanel.transform) {
+                    Destroy(item.gameObject);
+                }
+
+                string[] allfiles = Directory.GetFiles(pathToFolder, "*.txt");
+                foreach (string filename in allfiles) {
+                    var loaderObj = Instantiate(loadItem);
+                    loaderObj.transform.parent = loadPanel.transform;
+                    loaderObj.transform.localScale = new Vector3(1f, 1f, 1f);
+
+                    var textObj = loaderObj.transform.GetChild(0);
+                    var text = textObj.GetComponent<Text>();
+                    var saveName = filename.Replace("Assets/Saves\\", "");
+                    text.text = saveName.Replace(".txt", "");
+
+                    var loadObj = loaderObj.transform.GetChild(1);
+                    var loadBtn = loadObj.GetComponent<Button>();
+                    loadBtn.onClick.AddListener(() => LoadGame(filename));
+
+                    var deleteObj = loaderObj.transform.GetChild(2);
+                    var deleteBtn = deleteObj.GetComponent<Button>();
+                    deleteBtn.onClick.AddListener(() => DeleteObj(loaderObj, filename));
+                }
+            } catch (Exception e) {
+                Debug.LogError(e);
+            }
+        }
+
+        public void DeleteObj(GameObject obj, string path) {
+            Destroy(obj);
+            File.Delete(path);
         }
 
         public void LoadGame(string path) {
@@ -440,27 +514,41 @@ namespace controller {
                 Debug.LogError("Path is null");
             }
 
-            var save = FromJson(path);
-            moveClr = save.moveClr;
-            map.board = new Option<Checker>[8, 8];
-            possibleMoves = null;
-            selected = Option<Vector2Int>.None();
-            foreach (var obj in map.figures) {
-                Destroy(obj);
-            }
+            try {
+                var save = FromJson(path);
+                moveClr = save.moveClr;
+                map.board = new Option<Checker>[8, 8];
+                possibleMoves = null;
+                selected = Option<Vector2Int>.None();
+                foreach (Transform item in highlightsObj.transform) {
+                    Destroy(item.gameObject);
+                }
 
-            foreach (var checker in save.board) {
-                map.board[checker.posX, checker.posY] = Option<Checker>.Some(checker.checker);
-            }
+                foreach (var obj in map.figures) {
+                    Destroy(obj);
+                }
 
-            FillCheckers(map.board);
-            menu.SetActive(!menu.activeSelf);
-            this.enabled = !this.enabled;
+                foreach (var checker in save.board) {
+                    map.board[checker.posX, checker.posY] = Option<Checker>.Some(checker.checker);
+                }
+
+                FillCheckers(map.board);
+                menu.SetActive(false);
+                loadPanel.SetActive(false);
+                this.enabled = true;
+            } catch (Exception e) {
+                Debug.LogError(e);
+            }
         }
 
         public void OpenMenu() {
+            savePanel.SetActive(false);
+            loadPanel.SetActive(false);
             menu.SetActive(!menu.activeSelf);
-            this.enabled = !this.enabled;
+            this.enabled = true;
+            if (menu.activeSelf) {
+                this.enabled = false;
+            }
         }
 
         public bool IsOnBoard<T>(Vector2Int pos, Option<T>[,] board) {
