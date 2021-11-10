@@ -60,6 +60,7 @@ namespace controller {
         public GameObject savePanel;
         public GameObject menu;
         public GameObject loadItem;
+        public GameObject checkers;
 
         private GameObject highlightsObj;
 
@@ -171,7 +172,6 @@ namespace controller {
                                 if (ch.type == ChType.Basic && !checkerFound) break;
                                 nextPos += dir;
                             }
-                            checkerFound = false;
                         }
                         possibleMoves.Add(chPos, moves);
                     }
@@ -389,7 +389,7 @@ namespace controller {
                     }
 
                     var checkerObj = Instantiate(prefab);
-                    checkerObj.transform.parent = resources.boardTransform;
+                    checkerObj.transform.parent = checkers.transform;
                     checkerObj.transform.localPosition = ToCenterCell(new Vector2Int(i, j));
 
                     map.figures[i, j] = checkerObj;
