@@ -3,8 +3,6 @@ using UnityEngine;
 using UnityEngine.UI;
 using System.Collections.Generic;
 using option;
-using jonson;
-using jonson.reflect;
 using System.IO;
 
 namespace controller {
@@ -16,17 +14,6 @@ namespace controller {
     public enum ChType {
         Basic,
         Lady
-    }
-
-    public struct Save {
-        public ChColor moveClr;
-        public List<SaveChecker> board;
-    }
-
-    public struct SaveChecker {
-        public Checker checker;
-        public int posX;
-        public int posY;
     }
 
     public struct Checker {
@@ -54,14 +41,13 @@ namespace controller {
 
     public class CheckersController : MonoBehaviour {
         public Resources resources;
-        public GameObject selectedHighlight;
-        public InputField saveInputField;
         public GameObject loadPanel;
-        public GameObject savePanel;
         public GameObject menu;
         public GameObject loadItem;
         public GameObject checkers;
+        public Button newGameBtn;
 
+        private GameObject slctObj;
         private GameObject highlightsObj;
 
         private Map map;
@@ -121,6 +107,9 @@ namespace controller {
                 return;
             }
 
+            var newGamePath = Path.Combine(Application.streamingAssetsPath, "new.csv");
+            newGameBtn.onClick.AddListener(() => LoadGame(newGamePath));
+
             dirs.Add(new Vector2Int(1, 1));
             dirs.Add(new Vector2Int(1, -1));
             dirs.Add(new Vector2Int(-1, 1));
@@ -135,6 +124,10 @@ namespace controller {
             highlightsObj.name = "Highlights";
             highlightsObj.transform.parent = resources.boardTransform;
             highlightsObj.transform.localRotation = Quaternion.Euler(0f, 0f, 0f);
+
+            slctObj = Instantiate(resources.selectedHighlight);
+            slctObj.transform.parent = resources.boardTransform;
+            slctObj.SetActive(false);
         }
 
         private void Update() {
@@ -169,7 +162,6 @@ namespace controller {
                                     if (next.color == ch.color || checkerFound) break;
                                     checkerFound = true;
                                 }
-                                if (ch.type == ChType.Basic && !checkerFound) break;
                                 nextPos += dir;
                             }
                         }
@@ -222,9 +214,8 @@ namespace controller {
                     highlight.transform.localPosition = ToCenterCell(moveCell.point);
                 }
 
-                var selectHighlight = Instantiate(selectedHighlight);
-                selectHighlight.transform.parent = highlightsObj.transform;
-                selectHighlight.transform.localPosition = ToCenterCell(selected.Peel());
+                slctObj.SetActive(true);
+                slctObj.transform.localPosition = ToCenterCell(selected.Peel());
             }
 
 
@@ -247,7 +238,9 @@ namespace controller {
                             prefab.transform.localPosition = ToCenterCell(clicked);
 
                             var checker = map.board[clicked.x, clicked.y].Peel();
-                            if (clicked.x == 0 || clicked.x == map.board.GetLength(0) - 1) {
+                            var boardSizeX = map.board.GetLength(0) - 1;
+                            if (clicked.x == 0 && moveClr == ChColor.White
+                                || clicked.x == boardSizeX && moveClr == ChColor.Black) {
                                 var obj = resources.blackLady;
                                 if (moveClr == ChColor.White) {
                                     obj = resources.whiteLady;
@@ -301,7 +294,6 @@ namespace controller {
                                             if (ch.type == ChType.Basic) break;
                                         }
 
-                                        if (ch.type == ChType.Basic && !checkerFound) break;
                                         nextPos += dir;
                                     }
                                 }
@@ -320,8 +312,6 @@ namespace controller {
                                         possibleMoves.Add(moveCell.point, moves);
                                         selected = Option<Vector2Int>.Some(moveCell.point);
 
-                                        var slctObj = Instantiate(selectedHighlight);
-                                        slctObj.transform.parent = highlightsObj.transform;
                                         slctObj.transform.localPosition = ToCenterCell(
                                             selected.Peel()
                                         );
@@ -349,6 +339,10 @@ namespace controller {
                         }
                     }
                 }
+            }
+
+            if (selected.IsNone()) {
+                slctObj.SetActive(false);
             }
         }
 
@@ -412,66 +406,75 @@ namespace controller {
         public void OpenSavePanel() {
             menu.SetActive(false);
             loadPanel.SetActive(false);
-            savePanel.SetActive(true);
             this.enabled = false;
         }
 
-        public void Save(string defaultPath) {
-            var path = defaultPath + saveInputField.text + ".txt";
-            File.Create(path).Dispose();
-
+        public void Save() {
+            var date = DateTime.Now.ToString("dd.MM.yyyy HH-mm-ss");
+            var filePath = Path.Combine(Application.streamingAssetsPath, date);
             try {
-                var cells = new List<SaveChecker>();
+                File.Create(filePath + ".csv").Dispose();
+                var cells = new List<List<string>>();
                 for (int i = 0; i < map.board.GetLength(0); i++) {
+                    var cellsRow = new List<string>();
                     for (int j = 0; j < map.board.GetLength(1); j++) {
+                        var strCh = "";
                         if (map.board[i, j].IsSome()) {
-                            var saveChecker = new SaveChecker();
-                            saveChecker.checker = map.board[i, j].Peel();
-                            saveChecker.posX = i;
-                            saveChecker.posY = j;
-                            cells.Add(saveChecker);
+                            var ch = map.board[i, j].Peel();
+                            if (ch.type == ChType.Basic) {
+                                if (ch.color == ChColor.White) {
+                                    strCh = "c";
+                                }
+
+                                if (ch.color == ChColor.Black) {
+                                    strCh = "C";
+                                }
+                            }
+
+                            if (ch.type == ChType.Lady) {
+                                if (ch.color == ChColor.White) {
+                                    strCh = "l";
+                                }
+
+                                if (ch.color == ChColor.Black) {
+                                    strCh = "L";
+                                }
+                            }
                         }
+                        cellsRow.Add(strCh);
                     }
+                    cells.Add(cellsRow);
                 }
-                var save = new Save();
-                save.moveClr = moveClr;
-                save.board = cells;
-                var type = Reflect.ToJSON(save, false);
-                string output = Jonson.Generate(type);
-                File.WriteAllText(path, output);
+
+                string output = CSV.Generate(cells);
+                File.WriteAllText(filePath + ".csv", output);
             } catch (FileNotFoundException e) {
                 Debug.LogError(e);
                 return;
             }
 
             menu.SetActive(false);
-            savePanel.SetActive(false);
             this.enabled = true;
+            ScreenCapture.CaptureScreenshot(filePath + ".png");
         }
 
-        public Save FromJson(string path) {
+        public List<List<string>> FromCSV(string path) {
             if (path == null) {
                 Debug.LogError("Path is null");
             }
 
             try {
                 var str = File.ReadAllText(path);
-                var save = new Save();
-                var type = Jonson.Parse(str, 1024);
-                return Reflect.FromJSON(save, type.AsOk());
+                return CSV.Parse(str).rows;
             } catch (Exception e) {
                 Debug.LogError(e);
-                return default(Save);
+                return null;
             }
         }
 
-        public void OpenLoadPanel(string pathToFolder) {
-            if (pathToFolder == null) {
-                Debug.LogError("Path is null");
-            }
-
+        public void OpenLoadPanel() {
+            var pathToFolder = Application.streamingAssetsPath;
             menu.SetActive(false);
-            savePanel.SetActive(false);
             loadPanel.SetActive(true);
             this.enabled = false;
 
@@ -480,33 +483,41 @@ namespace controller {
                     Destroy(item.gameObject);
                 }
 
-                string[] allfiles = Directory.GetFiles(pathToFolder, "*.txt");
+                string[] allfiles = Directory.GetFiles(pathToFolder, "*.csv");
                 foreach (string filename in allfiles) {
+                    if (filename == Path.Combine(pathToFolder, "new.csv")) continue;
                     var loaderObj = Instantiate(loadItem);
                     loaderObj.transform.parent = loadPanel.transform;
                     loaderObj.transform.localScale = new Vector3(1f, 1f, 1f);
 
                     var textObj = loaderObj.transform.GetChild(0);
                     var text = textObj.GetComponent<Text>();
-                    var saveName = filename.Replace("Assets/Saves\\", "");
-                    text.text = saveName.Replace(".txt", "");
+                    var saveName = filename.Replace(pathToFolder, "");
+                    saveName = saveName.Replace(".csv", "");
+                    text.text = saveName;
 
-                    var loadObj = loaderObj.transform.GetChild(1);
+                    var imageObj = loaderObj.transform.GetChild(1);
+                    var image = imageObj.GetComponent<RawImage>();
+                    byte[] data = File.ReadAllBytes(filename.Replace(".csv", ".png"));
+                    Texture2D tex = new Texture2D(2, 2);
+                    tex.LoadImage(data);
+                    image.texture = tex;
+
+                    var loadObj = loaderObj.transform.GetChild(2);
                     var loadBtn = loadObj.GetComponent<Button>();
                     loadBtn.onClick.AddListener(() => LoadGame(filename));
 
-                    var deleteObj = loaderObj.transform.GetChild(2);
+                    var deleteObj = loaderObj.transform.GetChild(3);
                     var deleteBtn = deleteObj.GetComponent<Button>();
-                    deleteBtn.onClick.AddListener(() => DeleteObj(loaderObj, filename));
+                    deleteBtn.onClick.AddListener(() => {
+                        Destroy(loaderObj);
+                        File.Delete(filename);
+                        File.Delete(filename.Replace(".csv", ".png"));
+                    });
                 }
             } catch (Exception e) {
                 Debug.LogError(e);
             }
-        }
-
-        public void DeleteObj(GameObject obj, string path) {
-            Destroy(obj);
-            File.Delete(path);
         }
 
         public void LoadGame(string path) {
@@ -515,9 +526,43 @@ namespace controller {
             }
 
             try {
-                var save = FromJson(path);
-                moveClr = save.moveClr;
-                map.board = new Option<Checker>[8, 8];
+                var csvBoard = FromCSV(path);
+
+                var x = 0;
+                foreach (var stroka in csvBoard) {
+
+                    var y = 0;
+                    foreach (var stolb in stroka) {
+                        switch (stolb) {
+                            case "c":
+                                map.board[x, y] = Option<Checker>.Some(
+                                    Checker.Mk(ChColor.White, ChType.Basic)
+                                );
+                                break;
+                            case "C":
+                                map.board[x, y] = Option<Checker>.Some(
+                                    Checker.Mk(ChColor.Black, ChType.Basic)
+                                );
+                                break;
+                            case "L":
+                                map.board[x, y] = Option<Checker>.Some(
+                                    Checker.Mk(ChColor.Black, ChType.Basic)
+                                );
+                                break;
+                            case "l":
+                                map.board[x, y] = Option<Checker>.Some(
+                                    Checker.Mk(ChColor.White, ChType.Basic)
+                                );
+                                break;
+                            case "":
+                                map.board[x, y] = Option<Checker>.None();
+                                break;
+                        }
+                        y++;
+                    }
+                    x++;
+                }
+
                 possibleMoves = null;
                 selected = Option<Vector2Int>.None();
                 foreach (Transform item in highlightsObj.transform) {
@@ -528,21 +573,17 @@ namespace controller {
                     Destroy(obj);
                 }
 
-                foreach (var checker in save.board) {
-                    map.board[checker.posX, checker.posY] = Option<Checker>.Some(checker.checker);
-                }
-
                 FillCheckers(map.board);
                 menu.SetActive(false);
                 loadPanel.SetActive(false);
                 this.enabled = true;
+
             } catch (Exception e) {
                 Debug.LogError(e);
             }
         }
 
         public void OpenMenu() {
-            savePanel.SetActive(false);
             loadPanel.SetActive(false);
             menu.SetActive(!menu.activeSelf);
             this.enabled = true;
