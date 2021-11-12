@@ -46,6 +46,7 @@ namespace controller {
         public GameObject loadItem;
         public GameObject checkers;
         public Button newGameBtn;
+        public Camera screenshotCamera;
 
         private GameObject slctObj;
         private GameObject highlightsObj;
@@ -412,41 +413,42 @@ namespace controller {
         public void Save() {
             var date = DateTime.Now.ToString("dd.MM.yyyy HH-mm-ss");
             var filePath = Path.Combine(Application.streamingAssetsPath, date);
-            try {
-                File.Create(filePath + ".csv").Dispose();
-                var cells = new List<List<string>>();
-                for (int i = 0; i < map.board.GetLength(0); i++) {
-                    var cellsRow = new List<string>();
-                    for (int j = 0; j < map.board.GetLength(1); j++) {
-                        var strCh = "";
-                        if (map.board[i, j].IsSome()) {
-                            var ch = map.board[i, j].Peel();
-                            if (ch.type == ChType.Basic) {
-                                if (ch.color == ChColor.White) {
-                                    strCh = "c";
-                                }
 
-                                if (ch.color == ChColor.Black) {
-                                    strCh = "C";
-                                }
+            File.Create(filePath + ".csv").Dispose();
+            var cells = new List<List<string>>();
+            for (int i = 0; i < map.board.GetLength(0); i++) {
+                var cellsRow = new List<string>();
+                for (int j = 0; j < map.board.GetLength(1); j++) {
+                    var strCh = "";
+                    if (map.board[i, j].IsSome()) {
+                        var ch = map.board[i, j].Peel();
+                        if (ch.type == ChType.Basic) {
+                            if (ch.color == ChColor.White) {
+                                strCh = "c";
                             }
 
-                            if (ch.type == ChType.Lady) {
-                                if (ch.color == ChColor.White) {
-                                    strCh = "l";
-                                }
-
-                                if (ch.color == ChColor.Black) {
-                                    strCh = "L";
-                                }
+                            if (ch.color == ChColor.Black) {
+                                strCh = "C";
                             }
                         }
-                        cellsRow.Add(strCh);
+
+                        if (ch.type == ChType.Lady) {
+                            if (ch.color == ChColor.White) {
+                                strCh = "l";
+                            }
+
+                            if (ch.color == ChColor.Black) {
+                                strCh = "L";
+                            }
+                        }
                     }
-                    cells.Add(cellsRow);
+                    cellsRow.Add(strCh);
                 }
+                cells.Add(cellsRow);
+            }
 
                 string output = CSV.Generate(cells);
+            try {
                 File.WriteAllText(filePath + ".csv", output);
             } catch (FileNotFoundException e) {
                 Debug.LogError(e);
@@ -455,7 +457,24 @@ namespace controller {
 
             menu.SetActive(false);
             this.enabled = true;
-            ScreenCapture.CaptureScreenshot(filePath + ".png");
+
+            RenderTexture renderTexture = screenshotCamera.targetTexture;
+            Texture2D texture = new Texture2D(
+                renderTexture.width,
+                renderTexture.height,
+                TextureFormat.ARGB32,
+                false
+            );
+
+            screenshotCamera.targetTexture = RenderTexture.GetTemporary(
+                renderTexture.width,
+                renderTexture.height,
+                16
+            );
+            Rect rect = new Rect(0, 0, renderTexture.width, renderTexture.height);
+            texture.ReadPixels(rect, 0, 0);
+            byte[] byteArr = texture.EncodeToPNG();
+            File.WriteAllBytes(filePath + ".png", byteArr);
         }
 
         public List<List<string>> FromCSV(string path) {
@@ -478,12 +497,18 @@ namespace controller {
             loadPanel.SetActive(true);
             this.enabled = false;
 
-            try {
                 foreach (Transform item in loadPanel.transform) {
                     Destroy(item.gameObject);
                 }
 
-                string[] allfiles = Directory.GetFiles(pathToFolder, "*.csv");
+                string[] allfiles;
+                try {
+                    allfiles = Directory.GetFiles(pathToFolder, "*.csv");
+                } catch (Exception e) {
+                    allfiles = default;
+                    Debug.LogError(e);
+                }
+
                 foreach (string filename in allfiles) {
                     if (filename == Path.Combine(pathToFolder, "new.csv")) continue;
                     var loaderObj = Instantiate(loadItem);
@@ -498,10 +523,15 @@ namespace controller {
 
                     var imageObj = loaderObj.transform.GetChild(1);
                     var image = imageObj.GetComponent<RawImage>();
-                    byte[] data = File.ReadAllBytes(filename.Replace(".csv", ".png"));
-                    Texture2D tex = new Texture2D(2, 2);
-                    tex.LoadImage(data);
-                    image.texture = tex;
+                    try {
+                        byte[] data = File.ReadAllBytes(filename.Replace(".csv", ".png"));
+                        Texture2D tex = new Texture2D(2, 2);
+                        tex.LoadImage(data);
+                        image.texture = tex;
+                    } catch (Exception e ) {
+                        Debug.LogError(e);
+                        continue;
+                    }
 
                     var loadObj = loaderObj.transform.GetChild(2);
                     var loadBtn = loadObj.GetComponent<Button>();
@@ -515,9 +545,6 @@ namespace controller {
                         File.Delete(filename.Replace(".csv", ".png"));
                     });
                 }
-            } catch (Exception e) {
-                Debug.LogError(e);
-            }
         }
 
         public void LoadGame(string path) {
@@ -529,11 +556,11 @@ namespace controller {
                 var csvBoard = FromCSV(path);
 
                 var x = 0;
-                foreach (var stroka in csvBoard) {
+                foreach (var row in csvBoard) {
 
                     var y = 0;
-                    foreach (var stolb in stroka) {
-                        switch (stolb) {
+                    foreach (var col in row) {
+                        switch (col) {
                             case "c":
                                 map.board[x, y] = Option<Checker>.Some(
                                     Checker.Mk(ChColor.White, ChType.Basic)
