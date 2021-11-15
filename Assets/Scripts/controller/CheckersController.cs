@@ -108,7 +108,7 @@ namespace controller {
                 return;
             }
 
-            var newGamePath = Path.Combine(Application.streamingAssetsPath, "new.csv");
+            var newGamePath = Path.Combine(Application.streamingAssetsPath, "newgame.csv");
             newGameBtn.onClick.AddListener(() => LoadGame(newGamePath));
 
             dirs.Add(new Vector2Int(1, 1));
@@ -518,7 +518,7 @@ namespace controller {
             }
 
             foreach (string filename in allfiles) {
-                if (filename == Path.Combine(pathToFolder, "new.csv")) continue;
+                if (filename == Path.Combine(pathToFolder, "newgame.csv")) continue;
                 var loaderObj = Instantiate(loadItem);
                 loaderObj.transform.parent = loadPanel.transform;
                 loaderObj.transform.localScale = new Vector3(1f, 1f, 1f);
