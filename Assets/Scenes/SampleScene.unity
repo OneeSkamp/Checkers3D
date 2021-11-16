@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0.44657844, g: 0.49641222, b: 0.57481694, a: 1}
+  m_IndirectSpecularColor: {r: 0.44657826, g: 0.49641263, b: 0.57481676, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -1679,7 +1679,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1971062389}
   - component: {fileID: 1971062388}
-  - component: {fileID: 1971062390}
   m_Layer: 0
   m_Name: screenshotCamera
   m_TagString: Untagged
@@ -1744,19 +1743,6 @@ Transform:
   m_Father: {fileID: 1816825572}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 21.889, y: 0, z: 0}
---- !u!114 &1971062390
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1971062387}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 683c695e19d44f6418999bba6bcf23cd, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  FileCounter: 0
 --- !u!1 &2019187876
 GameObject:
   m_ObjectHideFlags: 0
