@@ -46,7 +46,7 @@ namespace controller {
         public GameObject loadItem;
         public GameObject checkers;
         public Button newGameBtn;
-        public Camera screenshotCamera;
+        public Camera screenCamera;
 
         private GameObject slctObj;
         private GameObject highlightsObj;
@@ -132,6 +132,12 @@ namespace controller {
         }
 
         private void Update() {
+
+
+            if (!Input.GetMouseButtonDown(0)) {
+                return;
+            }
+
             if (possibleMoves == null) {
                 possibleMoves = new Dictionary<Vector2Int, List<MoveCell>>();
                 for (int i = 0; i < map.board.GetLength(0); i++) {
@@ -174,10 +180,6 @@ namespace controller {
             if (possibleMoves.Count == 0) {
                 menu.SetActive(true);
                 this.enabled = false;
-            }
-
-            if (!Input.GetMouseButtonDown(0)) {
-                return;
             }
 
             var ray = Camera.main.ScreenPointToRay(Input.mousePosition);
@@ -455,26 +457,32 @@ namespace controller {
                 return;
             }
 
+            RenderTexture currentRT = RenderTexture.active;
+            RenderTexture.active = screenCamera.targetTexture;
+
+            screenCamera.Render();
+            var width = screenCamera.targetTexture.width;
+            var height = screenCamera.targetTexture.height;
+
+            Texture2D texture = new Texture2D(width, height);
+
+            Rect rect = new Rect(0, 0, width, height);
+            texture.ReadPixels(rect, 0, 0);
+            texture.Apply();
+            RenderTexture.active = currentRT;
+
+            var Bytes = texture.EncodeToPNG();
+            Destroy(texture);
+
+            try {
+                File.WriteAllBytes(filePath + ".png", Bytes);
+                Debug.Log(filePath + " game saves");
+            } catch (Exception e) {
+                Debug.LogError(e);
+            }
+
             menu.SetActive(false);
             this.enabled = true;
-
-            RenderTexture renderTexture = screenshotCamera.targetTexture;
-            Texture2D texture = new Texture2D(
-                renderTexture.width,
-                renderTexture.height,
-                TextureFormat.ARGB32,
-                false
-            );
-
-            screenshotCamera.targetTexture = RenderTexture.GetTemporary(
-                renderTexture.width,
-                renderTexture.height,
-                16
-            );
-            Rect rect = new Rect(0, 0, renderTexture.width, renderTexture.height);
-            texture.ReadPixels(rect, 0, 0);
-            byte[] byteArr = texture.EncodeToPNG();
-            File.WriteAllBytes(filePath + ".png", byteArr);
         }
 
         public List<List<string>> FromCSV(string path) {
@@ -497,54 +505,63 @@ namespace controller {
             loadPanel.SetActive(true);
             this.enabled = false;
 
-                foreach (Transform item in loadPanel.transform) {
-                    Destroy(item.gameObject);
-                }
+            foreach (Transform item in loadPanel.transform) {
+                Destroy(item.gameObject);
+            }
 
-                string[] allfiles;
+            string[] allfiles;
+            try {
+                allfiles = Directory.GetFiles(pathToFolder, "*.csv");
+            } catch (Exception e) {
+                allfiles = default;
+                Debug.LogError(e);
+            }
+
+            foreach (string filename in allfiles) {
+                if (filename == Path.Combine(pathToFolder, "new.csv")) continue;
+                var loaderObj = Instantiate(loadItem);
+                loaderObj.transform.parent = loadPanel.transform;
+                loaderObj.transform.localScale = new Vector3(1f, 1f, 1f);
+
+                var textObj = loaderObj.transform.GetChild(0);
+                var text = textObj.GetComponent<Text>();
+                var saveName = filename.Replace(pathToFolder, "");
+                saveName = saveName.Replace(".csv", "");
+                text.text = saveName;
+
+                var imageObj = loaderObj.transform.GetChild(1);
+                var image = imageObj.GetComponent<RawImage>();
                 try {
-                    allfiles = Directory.GetFiles(pathToFolder, "*.csv");
-                } catch (Exception e) {
-                    allfiles = default;
+                    byte[] data = File.ReadAllBytes(filename.Replace(".csv", ".png"));
+                    Texture2D tex = new Texture2D(2, 2);
+                    tex.LoadImage(data);
+                    image.texture = tex;
+                } catch (Exception e ) {
                     Debug.LogError(e);
+                    continue;
                 }
 
-                foreach (string filename in allfiles) {
-                    if (filename == Path.Combine(pathToFolder, "new.csv")) continue;
-                    var loaderObj = Instantiate(loadItem);
-                    loaderObj.transform.parent = loadPanel.transform;
-                    loaderObj.transform.localScale = new Vector3(1f, 1f, 1f);
+                var loadObj = loaderObj.transform.GetChild(2);
+                var loadBtn = loadObj.GetComponent<Button>();
+                loadBtn.onClick.AddListener(() => LoadGame(filename));
 
-                    var textObj = loaderObj.transform.GetChild(0);
-                    var text = textObj.GetComponent<Text>();
-                    var saveName = filename.Replace(pathToFolder, "");
-                    saveName = saveName.Replace(".csv", "");
-                    text.text = saveName;
-
-                    var imageObj = loaderObj.transform.GetChild(1);
-                    var image = imageObj.GetComponent<RawImage>();
+                var deleteObj = loaderObj.transform.GetChild(3);
+                var deleteBtn = deleteObj.GetComponent<Button>();
+                deleteBtn.onClick.AddListener(() => {
+                    Destroy(loaderObj);
                     try {
-                        byte[] data = File.ReadAllBytes(filename.Replace(".csv", ".png"));
-                        Texture2D tex = new Texture2D(2, 2);
-                        tex.LoadImage(data);
-                        image.texture = tex;
-                    } catch (Exception e ) {
+                        File.Delete(filename);
+                    } catch (Exception e) {
                         Debug.LogError(e);
-                        continue;
                     }
 
-                    var loadObj = loaderObj.transform.GetChild(2);
-                    var loadBtn = loadObj.GetComponent<Button>();
-                    loadBtn.onClick.AddListener(() => LoadGame(filename));
-
-                    var deleteObj = loaderObj.transform.GetChild(3);
-                    var deleteBtn = deleteObj.GetComponent<Button>();
-                    deleteBtn.onClick.AddListener(() => {
-                        Destroy(loaderObj);
-                        File.Delete(filename);
+                    try {
                         File.Delete(filename.Replace(".csv", ".png"));
-                    });
-                }
+                    } catch (Exception e) {
+                        Debug.LogError(e);
+                    }
+                });
+            }
         }
 
         public void LoadGame(string path) {
@@ -552,62 +569,57 @@ namespace controller {
                 Debug.LogError("Path is null");
             }
 
-            try {
-                var csvBoard = FromCSV(path);
+            var csvBoard = FromCSV(path);
 
-                var x = 0;
-                foreach (var row in csvBoard) {
+            var x = 0;
+            foreach (var row in csvBoard) {
 
-                    var y = 0;
-                    foreach (var col in row) {
-                        switch (col) {
-                            case "c":
-                                map.board[x, y] = Option<Checker>.Some(
-                                    Checker.Mk(ChColor.White, ChType.Basic)
-                                );
-                                break;
-                            case "C":
-                                map.board[x, y] = Option<Checker>.Some(
-                                    Checker.Mk(ChColor.Black, ChType.Basic)
-                                );
-                                break;
-                            case "L":
-                                map.board[x, y] = Option<Checker>.Some(
-                                    Checker.Mk(ChColor.Black, ChType.Basic)
-                                );
-                                break;
-                            case "l":
-                                map.board[x, y] = Option<Checker>.Some(
-                                    Checker.Mk(ChColor.White, ChType.Basic)
-                                );
-                                break;
-                            case "":
-                                map.board[x, y] = Option<Checker>.None();
-                                break;
-                        }
-                        y++;
+                var y = 0;
+                foreach (var col in row) {
+                    switch (col) {
+                        case "c":
+                            map.board[x, y] = Option<Checker>.Some(
+                                Checker.Mk(ChColor.White, ChType.Basic)
+                            );
+                            break;
+                        case "C":
+                            map.board[x, y] = Option<Checker>.Some(
+                                Checker.Mk(ChColor.Black, ChType.Basic)
+                            );
+                            break;
+                        case "L":
+                            map.board[x, y] = Option<Checker>.Some(
+                                Checker.Mk(ChColor.Black, ChType.Basic)
+                            );
+                            break;
+                        case "l":
+                            map.board[x, y] = Option<Checker>.Some(
+                                Checker.Mk(ChColor.White, ChType.Basic)
+                            );
+                            break;
+                        case "":
+                            map.board[x, y] = Option<Checker>.None();
+                            break;
                     }
-                    x++;
+                    y++;
                 }
-
-                possibleMoves = null;
-                selected = Option<Vector2Int>.None();
-                foreach (Transform item in highlightsObj.transform) {
-                    Destroy(item.gameObject);
-                }
-
-                foreach (var obj in map.figures) {
-                    Destroy(obj);
-                }
-
-                FillCheckers(map.board);
-                menu.SetActive(false);
-                loadPanel.SetActive(false);
-                this.enabled = true;
-
-            } catch (Exception e) {
-                Debug.LogError(e);
+                x++;
             }
+
+            possibleMoves = null;
+            selected = Option<Vector2Int>.None();
+            foreach (Transform item in highlightsObj.transform) {
+                Destroy(item.gameObject);
+            }
+
+            foreach (var obj in map.figures) {
+                Destroy(obj);
+            }
+
+            FillCheckers(map.board);
+            menu.SetActive(false);
+            loadPanel.SetActive(false);
+            this.enabled = true;
         }
 
         public void OpenMenu() {
