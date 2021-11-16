@@ -355,7 +355,6 @@ namespace controller {
                 }
             }
 
-
             if (selected.IsNone()) {
                 slctObj.SetActive(false);
             }
@@ -513,71 +512,6 @@ namespace controller {
             }
         }
 
-        public void OpenLoadPanel() {
-            var pathToFolder = Application.persistentDataPath;
-            menu.SetActive(false);
-            loadPanel.SetActive(true);
-            this.enabled = false;
-
-            foreach (Transform item in loadPanel.transform) {
-                Destroy(item.gameObject);
-            }
-
-            string[] allfiles;
-            try {
-                allfiles = Directory.GetFiles(pathToFolder, "*.csv");
-            } catch (Exception e) {
-                allfiles = default;
-                Debug.LogError(e);
-            }
-
-            foreach (string filename in allfiles) {
-                if (filename == Path.Combine(pathToFolder, "newgame.csv")) continue;
-                var loaderObj = Instantiate(loadItem);
-                loaderObj.transform.SetParent(loadPanel.transform);
-                loaderObj.transform.localScale = new Vector3(1f, 1f, 1f);
-
-                var textObj = loaderObj.transform.GetChild(0);
-                var text = textObj.GetComponent<Text>();
-                var saveName = filename.Replace(pathToFolder, "");
-                saveName = saveName.Replace(".csv", "");
-                text.text = saveName;
-
-                var imageObj = loaderObj.transform.GetChild(1);
-                var image = imageObj.GetComponent<RawImage>();
-                try {
-                    byte[] data = File.ReadAllBytes(filename.Replace(".csv", ".png"));
-                    Texture2D tex = new Texture2D(2, 2);
-                    tex.LoadImage(data);
-                    image.texture = tex;
-                } catch (Exception e ) {
-                    Debug.LogError(e);
-                    continue;
-                }
-
-                var loadObj = loaderObj.transform.GetChild(2);
-                var loadBtn = loadObj.GetComponent<Button>();
-                loadBtn.onClick.AddListener(() => LoadGame(filename));
-
-                var deleteObj = loaderObj.transform.GetChild(3);
-                var deleteBtn = deleteObj.GetComponent<Button>();
-                deleteBtn.onClick.AddListener(() => {
-                    Destroy(loaderObj);
-                    try {
-                        File.Delete(filename);
-                    } catch (Exception e) {
-                        Debug.LogError(e);
-                    }
-
-                    try {
-                        File.Delete(filename.Replace(".csv", ".png"));
-                    } catch (Exception e) {
-                        Debug.LogError(e);
-                    }
-                });
-            }
-        }
-
         public void LoadGame(string path) {
             if (path == null) {
                 Debug.LogError("Path is null");
@@ -628,15 +562,6 @@ namespace controller {
             menu.SetActive(false);
             loadPanel.SetActive(false);
             this.enabled = true;
-        }
-
-        public void OpenMenu() {
-            loadPanel.SetActive(false);
-            menu.SetActive(!menu.activeSelf);
-            this.enabled = true;
-            if (menu.activeSelf) {
-                this.enabled = false;
-            }
         }
 
         public bool IsOnBoard<T>(Vector2Int pos, Option<T>[,] board) {

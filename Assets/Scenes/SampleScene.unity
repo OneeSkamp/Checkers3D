@@ -134,6 +134,7 @@ GameObject:
   - component: {fileID: 73204097}
   - component: {fileID: 73204096}
   - component: {fileID: 73204098}
+  - component: {fileID: 73204099}
   m_Layer: 0
   m_Name: init
   m_TagString: Untagged
@@ -195,6 +196,18 @@ MonoBehaviour:
   blackLady: {fileID: 7952385627658190473, guid: 658c7957bfe6ca048bc295310fa42b27, type: 3}
   moveHighlight: {fileID: 3011315072822383537, guid: d6d3f9a3d7fa1a940acc3fe863ab07fb, type: 3}
   selectedHighlight: {fileID: 3416308811518889918, guid: ede7a2832d9f97742a70f3c06927f737, type: 3}
+--- !u!114 &73204099
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 73204095}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ce12bde4dd348794a95b3dff07e98bc7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &382874525
 GameObject:
   m_ObjectHideFlags: 0
