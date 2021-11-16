@@ -26,11 +26,11 @@ namespace controller {
     }
 
     public struct MoveCell {
-        public Vector2Int point;
+        public Vector2Int pos;
         public bool isAttack;
 
         public static MoveCell Mk(Vector2Int point, bool isAttack) {
-            return new MoveCell { point = point, isAttack = isAttack };
+            return new MoveCell { pos = point, isAttack = isAttack };
         }
     }
 
@@ -132,15 +132,6 @@ namespace controller {
         }
 
         private void Update() {
-            if (possibleMoves != null && possibleMoves.Count == 0) {
-                menu.SetActive(true);
-                this.enabled = false;
-            }
-
-            if (!Input.GetMouseButtonDown(0)) {
-                return;
-            }
-
             if (possibleMoves == null) {
                 possibleMoves = new Dictionary<Vector2Int, List<MoveCell>>();
                 for (int i = 0; i < map.board.GetLength(0); i++) {
@@ -178,6 +169,15 @@ namespace controller {
                         possibleMoves.Add(chPos, moves);
                     }
                 }
+
+                if (possibleMoves.Count == 0) {
+                    menu.SetActive(true);
+                    this.enabled = false;
+                }
+            }
+
+            if (!Input.GetMouseButtonDown(0)) {
+                return;
             }
 
             var ray = Camera.main.ScreenPointToRay(Input.mousePosition);
@@ -212,7 +212,7 @@ namespace controller {
                     if (needAttack && !moveCell.isAttack) continue;
                     var highlight = Instantiate(resources.moveHighlight);
                     highlight.transform.parent = highlightsObj.transform;
-                    highlight.transform.localPosition = ToCenterCell(moveCell.point);
+                    highlight.transform.localPosition = ToCenterCell(moveCell.pos);
                 }
 
                 slctObj.SetActive(true);
@@ -221,129 +221,140 @@ namespace controller {
 
             if (selected.IsSome()) {
                 var moveCells = possibleMoves[selected.Peel()];
+                var sel = selected.Peel();
 
-                var slct = selected.Peel();
-                if (map.board[clicked.x, clicked.y].IsNone()) {
+                if (map.board[clicked.x, clicked.y].IsSome()) {
+                    return;
+                }
 
-                    foreach (var moveCell in moveCells) {
-                        if (needAttack && !moveCell.isAttack) continue;
+                var moveCellOpt = Option<MoveCell>.None();
+                foreach (var cell in moveCells) {
+                    if (needAttack && !cell.isAttack) continue;
+                    if (cell.pos == clicked) {
+                        moveCellOpt = Option<MoveCell>.Some(cell);
+                        break;
+                    }
+                }
 
-                        if (moveCell.point == clicked) {
-                            map.board[clicked.x, clicked.y] = map.board[slct.x, slct.y];
-                            map.board[slct.x, slct.y] = Option<Checker>.None();
+                if (moveCellOpt.IsNone()) return;
+                var moveCell = moveCellOpt.Peel();
 
-                            var prefab = map.figures[slct.x, slct.y];
-                            map.figures[clicked.x, clicked.y] = prefab;
+                var edge = 0;
+                if (moveClr == ChColor.Black) {
+                    edge = map.board.GetLength(0) - 1;
+                }
 
-                            prefab.transform.localPosition = ToCenterCell(clicked);
+                var promote = clicked.x == edge;
 
-                            var checker = map.board[clicked.x, clicked.y].Peel();
-                            var boardSizeX = map.board.GetLength(0) - 1;
-                            var whitePromote = clicked.x == 0 && moveClr == ChColor.White;
-                            var blackPromote = clicked.x == boardSizeX && moveClr == ChColor.Black;
-                            if (whitePromote || blackPromote) {
-                                var obj = resources.blackLady;
-                                if (moveClr == ChColor.White) {
-                                    obj = resources.whiteLady;
+                if (moveCell.pos == clicked) {
+                    map.board[clicked.x, clicked.y] = map.board[sel.x, sel.y];
+                    map.board[sel.x, sel.y] = Option<Checker>.None();
+
+                    var chObj = map.figures[sel.x, sel.y];
+                    map.figures[clicked.x, clicked.y] = chObj;
+
+                    chObj.transform.localPosition = ToCenterCell(clicked);
+
+                    if (clicked.x == edge) {
+                        var obj = resources.blackLady;
+                        if (moveClr == ChColor.White) {
+                            obj = resources.whiteLady;
+                        }
+
+                        var lady = Option<Checker>.Some(Checker.Mk(moveClr, ChType.Lady));
+                        map.board[clicked.x, clicked.y] = lady;
+
+                        Destroy(map.figures[clicked.x, clicked.y]);
+                        var ladyObj = Instantiate(obj);
+                        ladyObj.transform.parent = resources.boardTransform;
+
+                        var pos = map.figures[clicked.x, clicked.y].transform.localPosition;
+                        ladyObj.transform.localPosition = pos;
+                        map.figures[clicked.x, clicked.y] = ladyObj;
+                    }
+
+                    var dif = moveCell.pos - selected.Peel();
+                    var attackDir = new Vector2Int(
+                        dif.x / Mathf.Abs(dif.x),
+                        dif.y / Mathf.Abs(dif.y)
+                    );
+
+                    var attackPos = selected.Peel() + attackDir;
+                    while (IsOnBoard(attackPos, map.board)) {
+                        if (attackPos == clicked) break;
+                        if (map.board[attackPos.x, attackPos.y].IsSome()) {
+                            attacked.Add(attackPos);
+                        }
+
+                        attackPos += attackDir;
+                    }
+
+                    if (moveCell.isAttack) {
+                        var chOpt = map.board[moveCell.pos.x, moveCell.pos.y];
+                        if (chOpt.IsNone() || chOpt.Peel().color != moveClr) return;
+                        var ch = chOpt.Peel();
+
+                        var moves = new List<MoveCell>();
+                        foreach (var dir in dirs) {
+                            var chFound = false;
+                            var nextPos = moveCell.pos + dir;
+                            while (IsOnBoard(nextPos, map.board)) {
+                                var nextOpt = map.board[nextPos.x, nextPos.y];
+
+                                if (nextOpt.IsSome()) {
+                                    if (chFound) break;
+                                    var next = nextOpt.Peel();
+                                    if (attacked.Contains(nextPos)) break;
+                                    if (next.color == ch.color) break;
+                                    chFound = true;
+                                } else if (nextOpt.IsNone() && chFound) {
+                                    moves.Add(MoveCell.Mk(nextPos, true));
+                                    if (ch.type == ChType.Basic) break;
                                 }
 
-                                var lady = Option<Checker>.Some(Checker.Mk(moveClr, ChType.Lady));
-                                map.board[clicked.x, clicked.y] = lady;
-
-                                Destroy(map.figures[clicked.x, clicked.y]);
-                                var ladyObj = Instantiate(obj);
-                                ladyObj.transform.parent = resources.boardTransform;
-
-                                var pos = map.figures[clicked.x, clicked.y].transform.localPosition;
-                                ladyObj.transform.localPosition = pos;
-                                map.figures[clicked.x, clicked.y] = ladyObj;
-                            }
-
-                            var vectorDif = moveCell.point - selected.Peel();
-                            var attackDir = new Vector2Int(
-                                vectorDif.x/Mathf.Abs(vectorDif.x),
-                                vectorDif.y/Mathf.Abs(vectorDif.y)
-                            );
-
-                            var attackPos = selected.Peel() + attackDir;
-                            while (IsOnBoard(attackPos, map.board)) {
-                                if (attackPos == clicked) break;
-                                if (map.board[attackPos.x, attackPos.y].IsSome()) {
-                                    attacked.Add(attackPos);
-                                }
-
-                                attackPos += attackDir;
-                            }
-
-                            if (moveCell.isAttack) {
-                                var chOpt = map.board[moveCell.point.x, moveCell.point.y];
-                                if (chOpt.IsNone() || chOpt.Peel().color != moveClr) continue;
-                                var ch = chOpt.Peel();
-
-                                var moves = new List<MoveCell>();
-                                foreach (var dir in dirs) {
-                                    var chFound = false;
-                                    var nextPos = moveCell.point + dir;
-                                    while (IsOnBoard(nextPos, map.board)) {
-                                        var nextOpt = map.board[nextPos.x, nextPos.y];
-
-                                        if (nextOpt.IsSome()) {
-                                            if (chFound) break;
-                                            var next = nextOpt.Peel();
-                                            if (attacked.Contains(nextPos)) break;
-                                            if (next.color == ch.color) break;
-                                            chFound = true;
-                                        } else if (nextOpt.IsNone() && chFound) {
-                                            moves.Add(MoveCell.Mk(nextPos, true));
-                                            if (ch.type == ChType.Basic) break;
-                                        }
-
-                                        nextPos += dir;
-                                    }
-                                }
-
-                                foreach (var mc in moves) {
-                                    if (needAttack && !moveCell.isAttack) continue;
-                                    var highlight = Instantiate(resources.moveHighlight);
-                                    highlight.transform.parent = highlightsObj.transform;
-                                    highlight.transform.localPosition = ToCenterCell(mc.point);
-                                }
-
-                                selected = Option<Vector2Int>.None();
-                                foreach (var mv in moves) {
-                                    if (mv.isAttack) {
-                                        possibleMoves.Clear();
-                                        possibleMoves.Add(moveCell.point, moves);
-                                        selected = Option<Vector2Int>.Some(moveCell.point);
-
-                                        slctObj.transform.localPosition = ToCenterCell(
-                                            selected.Peel()
-                                        );
-                                        break;
-                                    }
-                                }
-                            } else {
-                                selected = Option<Vector2Int>.None();
-                            }
-
-                            if (selected.IsNone()) {
-                                foreach (var attack in attacked) {
-                                    Destroy(map.figures[attack.x, attack.y]);
-                                    map.board[attack.x, attack.y] = Option<Checker>.None();
-                                }
-
-                                attacked.Clear();
-                                if (moveClr == ChColor.White) {
-                                    moveClr = ChColor.Black;
-                                } else {
-                                    moveClr = ChColor.White;
-                                }
-                                possibleMoves = null;
+                                nextPos += dir;
                             }
                         }
+
+                        foreach (var mc in moves) {
+                            if (needAttack && !moveCell.isAttack) continue;
+                            var highlight = Instantiate(resources.moveHighlight);
+                            highlight.transform.parent = highlightsObj.transform;
+                            highlight.transform.localPosition = ToCenterCell(mc.pos);
+                        }
+
+                        selected = Option<Vector2Int>.None();
+                        foreach (var mv in moves) {
+                            if (mv.isAttack) {
+                                possibleMoves.Clear();
+                                possibleMoves.Add(moveCell.pos, moves);
+                                selected = Option<Vector2Int>.Some(moveCell.pos);
+
+                                slctObj.transform.localPosition = ToCenterCell(selected.Peel());
+                                break;
+                            }
+                        }
+                    } else {
+                        selected = Option<Vector2Int>.None();
+                    }
+
+                    if (selected.IsNone()) {
+                        foreach (var attack in attacked) {
+                            Destroy(map.figures[attack.x, attack.y]);
+                            map.board[attack.x, attack.y] = Option<Checker>.None();
+                        }
+
+                        attacked.Clear();
+                        if (moveClr == ChColor.White) {
+                            moveClr = ChColor.Black;
+                        } else {
+                            moveClr = ChColor.White;
+                        }
+                        possibleMoves = null;
                     }
                 }
             }
+
 
             if (selected.IsNone()) {
                 slctObj.SetActive(false);
@@ -415,7 +426,7 @@ namespace controller {
 
         public void Save() {
             var date = DateTime.Now.ToString("dd.MM.yyyy HH-mm-ss");
-            var filePath = Path.Combine(Application.streamingAssetsPath, date);
+            var filePath = Path.Combine(Application.persistentDataPath, date);
 
             File.Create(filePath + ".csv").Dispose();
             var cells = new List<List<string>>();
@@ -425,33 +436,28 @@ namespace controller {
                     var strCh = "";
                     if (map.board[i, j].IsSome()) {
                         var ch = map.board[i, j].Peel();
+
                         if (ch.type == ChType.Basic) {
                             if (ch.color == ChColor.White) {
-                                strCh = "c";
+                                strCh = "0";
                             }
 
                             if (ch.color == ChColor.Black) {
-                                strCh = "C";
+                                strCh = "1";
                             }
                         }
 
                         if (ch.type == ChType.Lady) {
                             if (ch.color == ChColor.White) {
-                                strCh = "l";
+                                strCh = "2";
                             }
 
                             if (ch.color == ChColor.Black) {
-                                strCh = "L";
+                                strCh = "3";
                             }
                         }
                     }
                     cellsRow.Add(strCh);
-                }
-
-                if (moveClr == ChColor.White) {
-                    cellsRow.Add("a");
-                } else {
-                    cellsRow.Add("A");
                 }
 
                 cells.Add(cellsRow);
@@ -508,7 +514,7 @@ namespace controller {
         }
 
         public void OpenLoadPanel() {
-            var pathToFolder = Application.streamingAssetsPath;
+            var pathToFolder = Application.persistentDataPath;
             menu.SetActive(false);
             loadPanel.SetActive(true);
             this.enabled = false;
@@ -584,37 +590,25 @@ namespace controller {
 
                 var y = 0;
                 foreach (var col in row) {
-                    switch (col) {
-                        case "a":
-                            moveClr = ChColor.White;
-                            break;
-                        case "A":
-                            moveClr = ChColor.Black;
-                            break;
-                        case "c":
-                            map.board[x, y] = Option<Checker>.Some(
-                                Checker.Mk(ChColor.White, ChType.Basic)
-                            );
-                            break;
-                        case "C":
-                            map.board[x, y] = Option<Checker>.Some(
-                                Checker.Mk(ChColor.Black, ChType.Basic)
-                            );
-                            break;
-                        case "L":
-                            map.board[x, y] = Option<Checker>.Some(
-                                Checker.Mk(ChColor.Black, ChType.Basic)
-                            );
-                            break;
-                        case "l":
-                            map.board[x, y] = Option<Checker>.Some(
-                                Checker.Mk(ChColor.White, ChType.Basic)
-                            );
-                            break;
-                        case "":
-                            map.board[x, y] = Option<Checker>.None();
-                            break;
+                    if (col == "") {
+                        map.board[x, y] = Option<Checker>.None();
+                        y++;
+                        continue;
                     }
+
+                    var cell = Int32.Parse(col);
+
+                    var color = ChColor.Black;
+                    if (cell % 2 == 0) {
+                        color = ChColor.White;
+                    }
+
+                    var chType = ChType.Basic;
+                    if (cell > 1) {
+                        chType = ChType.Lady;
+                    }
+
+                    map.board[x, y] = Option<Checker>.Some(Checker.Mk(color, chType));
                     y++;
                 }
                 x++;
