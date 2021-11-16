@@ -527,7 +527,7 @@ namespace controller {
             foreach (string filename in allfiles) {
                 if (filename == Path.Combine(pathToFolder, "newgame.csv")) continue;
                 var loaderObj = Instantiate(loadItem);
-                loaderObj.transform.parent = loadPanel.transform;
+                loaderObj.transform.SetParent(loadPanel.transform);
                 loaderObj.transform.localScale = new Vector3(1f, 1f, 1f);
 
                 var textObj = loaderObj.transform.GetChild(0);
