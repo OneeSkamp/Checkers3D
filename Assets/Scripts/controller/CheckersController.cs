@@ -155,19 +155,19 @@ namespace controller {
 
                         var moves = new List<MoveCell>();
                         foreach (var dir in dirs) {
-                            var checkerFound = false;
+                            var chFound = false;
                             var nextPos = chPos + dir;
                             while (IsOnBoard(nextPos, map.board)) {
                                 var nextOpt = map.board[nextPos.x, nextPos.y];
                                 if (nextOpt.IsNone()) {
                                     var wrongDir = xDir != dir.x && ch.type == ChType.Basic;
-                                    if (!checkerFound && wrongDir) break;
-                                    moves.Add(MoveCell.Mk(nextPos, checkerFound));
+                                    if (!chFound && wrongDir) break;
+                                    moves.Add(MoveCell.Mk(nextPos, chFound));
                                     if (ch.type == ChType.Basic) break;
                                 } else {
                                     var next = nextOpt.Peel();
-                                    if (next.color == ch.color || checkerFound) break;
-                                    checkerFound = true;
+                                    if (next.color == ch.color || chFound) break;
+                                    chFound = true;
                                 }
                                 nextPos += dir;
                             }
@@ -281,18 +281,18 @@ namespace controller {
 
                                 var moves = new List<MoveCell>();
                                 foreach (var dir in dirs) {
-                                    var checkerFound = false;
+                                    var chFound = false;
                                     var nextPos = moveCell.point + dir;
                                     while (IsOnBoard(nextPos, map.board)) {
                                         var nextOpt = map.board[nextPos.x, nextPos.y];
 
                                         if (nextOpt.IsSome()) {
-                                            if (checkerFound) break;
+                                            if (chFound) break;
                                             var next = nextOpt.Peel();
                                             if (attacked.Contains(nextPos)) break;
                                             if (next.color == ch.color) break;
-                                            checkerFound = true;
-                                        } else if (nextOpt.IsNone() && checkerFound) {
+                                            chFound = true;
+                                        } else if (nextOpt.IsNone() && chFound) {
                                             moves.Add(MoveCell.Mk(nextPos, true));
                                             if (ch.type == ChType.Basic) break;
                                         }
@@ -446,6 +446,13 @@ namespace controller {
                     }
                     cellsRow.Add(strCh);
                 }
+
+                if (moveClr == ChColor.White) {
+                    cellsRow.Add("a");
+                } else {
+                    cellsRow.Add("A");
+                }
+
                 cells.Add(cellsRow);
             }
 
@@ -577,6 +584,12 @@ namespace controller {
                 var y = 0;
                 foreach (var col in row) {
                     switch (col) {
+                        case "a":
+                            moveClr = ChColor.White;
+                            break;
+                        case "A":
+                            moveClr = ChColor.Black;
+                            break;
                         case "c":
                             map.board[x, y] = Option<Checker>.Some(
                                 Checker.Mk(ChColor.White, ChType.Basic)
