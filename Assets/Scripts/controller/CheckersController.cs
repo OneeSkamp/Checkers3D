@@ -132,7 +132,10 @@ namespace controller {
         }
 
         private void Update() {
-
+            if (possibleMoves != null && possibleMoves.Count == 0) {
+                menu.SetActive(true);
+                this.enabled = false;
+            }
 
             if (!Input.GetMouseButtonDown(0)) {
                 return;
@@ -177,11 +180,6 @@ namespace controller {
                 }
             }
 
-            if (possibleMoves.Count == 0) {
-                menu.SetActive(true);
-                this.enabled = false;
-            }
-
             var ray = Camera.main.ScreenPointToRay(Input.mousePosition);
 
             if (!Physics.Raycast(ray, out RaycastHit hit)) {
@@ -221,7 +219,6 @@ namespace controller {
                 slctObj.transform.localPosition = ToCenterCell(selected.Peel());
             }
 
-
             if (selected.IsSome()) {
                 var moveCells = possibleMoves[selected.Peel()];
 
@@ -242,18 +239,22 @@ namespace controller {
 
                             var checker = map.board[clicked.x, clicked.y].Peel();
                             var boardSizeX = map.board.GetLength(0) - 1;
-                            if (clicked.x == 0 && moveClr == ChColor.White
-                                || clicked.x == boardSizeX && moveClr == ChColor.Black) {
+                            var whitePromote = clicked.x == 0 && moveClr == ChColor.White;
+                            var blackPromote = clicked.x == boardSizeX && moveClr == ChColor.Black;
+                            if (whitePromote || blackPromote) {
                                 var obj = resources.blackLady;
                                 if (moveClr == ChColor.White) {
                                     obj = resources.whiteLady;
                                 }
+
                                 var lady = Option<Checker>.Some(Checker.Mk(moveClr, ChType.Lady));
                                 map.board[clicked.x, clicked.y] = lady;
-                                var pos = map.figures[clicked.x, clicked.y].transform.localPosition;
+
                                 Destroy(map.figures[clicked.x, clicked.y]);
                                 var ladyObj = Instantiate(obj);
                                 ladyObj.transform.parent = resources.boardTransform;
+
+                                var pos = map.figures[clicked.x, clicked.y].transform.localPosition;
                                 ladyObj.transform.localPosition = pos;
                                 map.figures[clicked.x, clicked.y] = ladyObj;
                             }
@@ -456,7 +457,7 @@ namespace controller {
                 cells.Add(cellsRow);
             }
 
-                string output = CSV.Generate(cells);
+            string output = CSV.Generate(cells);
             try {
                 File.WriteAllText(filePath + ".csv", output);
             } catch (FileNotFoundException e) {
