@@ -19,10 +19,9 @@ namespace ui {
         private void Awake() {
             var newGamePath = Path.Combine(Application.streamingAssetsPath, "newgame.csv");
             newGameBtn.onClick.AddListener(() => {
+                chController.selHighlight.SetActive(false);
                 chController.map.board = chController.BoardFromCSV(newGamePath);
                 chController.FillCheckers(chController.map.board);
-                menu.SetActive(false);
-                loadPanel.SetActive(false);
                 chController.enabled = true;
             });
 
@@ -32,16 +31,16 @@ namespace ui {
                 chController.boardToCSV(chController.map.board, filePath);
                 chController.Screenshot(filePath);
 
-                menu.SetActive(false);
                 chController.enabled = true;
 
                 await Manifestation();
                 await Decay();
             });
+
+            chController.gameOver += OpenMenu;
         }
 
         public void OpenMenu() {
-            loadPanel.SetActive(false);
             menu.SetActive(!menu.activeSelf);
             chController.enabled = true;
             if (menu.activeSelf) {
@@ -50,8 +49,6 @@ namespace ui {
         }
 
         public void OpenLoadPanel() {
-            menu.SetActive(false);
-            loadPanel.SetActive(true);
             chController.enabled = false;
 
             foreach (Transform item in content.transform) {
@@ -76,6 +73,7 @@ namespace ui {
                 var loadTransform = loaderObj.transform.GetChild(2);
                 var loadBtn = loadTransform.GetComponent<Button>();
                 loadBtn.onClick.AddListener(() => {
+                    chController.selHighlight.SetActive(false);
                     chController.map.board = chController.BoardFromCSV(saveInfo.csvPath);
                     chController.FillCheckers(chController.map.board);
                     menu.SetActive(false);

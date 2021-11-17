@@ -48,12 +48,16 @@ namespace controller {
     public class CheckersController : MonoBehaviour {
         public Resources resources;
         public GameObject checkers;
+        public GameObject selHighlight;
+
 
         public Camera screenCamera;
         public Map map;
 
-        private GameObject selHighlight;
+        public event Action gameOver;
+
         private GameObject highlightsObj;
+        private bool needAttack;
 
         private ChColor moveClr;
         private Option<Vector2Int> selected;
@@ -171,7 +175,18 @@ namespace controller {
                 }
 
                 if (possibleMoves.Count == 0) {
+                    gameOver?.Invoke();
                     this.enabled = false;
+                }
+            }
+
+            if (selected.IsSome() && highlightsObj.transform.childCount == 0) {
+                var moveCells = possibleMoves[selected.Peel()];
+                foreach (var moveCell in moveCells) {
+                    if (needAttack && !moveCell.isAttack) continue;
+                    var highlight = Instantiate(resources.moveHighlight);
+                    highlight.transform.SetParent(highlightsObj.transform);
+                    highlight.transform.localPosition = ToCenterCell(moveCell.pos);
                 }
             }
 
@@ -191,7 +206,7 @@ namespace controller {
                 Destroy(item.gameObject);
             }
 
-            var needAttack = false;
+            needAttack = false;
             foreach (var moves in possibleMoves) {
                 foreach (var move in moves.Value) {
                     if (move.isAttack) {
@@ -206,13 +221,6 @@ namespace controller {
                 if (!possibleMoves.ContainsKey(clicked)) return;
 
                 selected = Option<Vector2Int>.Some(clicked);
-                var moveCells = possibleMoves[selected.Peel()];
-                foreach (var moveCell in moveCells) {
-                    if (needAttack && !moveCell.isAttack) continue;
-                    var highlight = Instantiate(resources.moveHighlight);
-                    highlight.transform.SetParent(highlightsObj.transform);
-                    highlight.transform.localPosition = ToCenterCell(moveCell.pos);
-                }
 
                 selHighlight.SetActive(true);
                 selHighlight.transform.localPosition = ToCenterCell(selected.Peel());
@@ -313,13 +321,6 @@ namespace controller {
 
                                 nextPos += dir;
                             }
-                        }
-
-                        foreach (var mc in moves) {
-                            if (needAttack && !moveCell.isAttack) continue;
-                            var highlight = Instantiate(resources.moveHighlight);
-                            highlight.transform.SetParent(highlightsObj.transform);
-                            highlight.transform.localPosition = ToCenterCell(mc.pos);
                         }
 
                         selected = Option<Vector2Int>.None();
