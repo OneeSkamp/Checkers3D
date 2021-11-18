@@ -15,37 +15,77 @@ namespace ui {
         public Button newGameBtn;
         public Button saveBtn;
         public Text saveComplete;
+        public AnimationCurve curve1;
+        public AnimationCurve curve2;
+        public AnimationCurve curve3;
 
         private void Awake() {
-            var newGamePath = Path.Combine(Application.streamingAssetsPath, "newgame.csv");
-            newGameBtn.onClick.AddListener(() => {
-                chController.selHighlight.SetActive(false);
-                chController.map.board = chController.BoardFromCSV(newGamePath);
-                chController.FillCheckers(chController.map.board);
-                chController.enabled = true;
-            });
+            if (chController == null) {
+                Debug.LogError("chController isn't provided");
+                this.enabled = false;
+                return;
+            }
 
-            saveBtn.onClick.AddListener(async () => {
-                var date = DateTime.Now.ToString("dd.MM.yyyy HH-mm-ss");
-                var filePath = Path.Combine(Application.persistentDataPath, date);
-                chController.boardToCSV(chController.map.board, filePath);
-                chController.Screenshot(filePath);
+            if (loadPanel == null) {
+                Debug.LogError("loadPanel isn't provided");
+                this.enabled = false;
+                return;
+            }
 
-                chController.enabled = true;
+            if (content == null) {
+                Debug.LogError("content isn't provided");
+                this.enabled = false;
+                return;
+            }
 
-                await Manifestation();
-                await Decay();
-            });
+            if (menu == null) {
+                Debug.LogError("menu isn't provided");
+                this.enabled = false;
+                return;
+            }
+
+            if (loadItem == null) {
+                Debug.LogError("loadItem isn't provided");
+                this.enabled = false;
+                return;
+            }
+
+            if (newGameBtn == null) {
+                Debug.LogError("newGameBtn isn't provided");
+                this.enabled = false;
+                return;
+            }
+
+            if (saveBtn == null) {
+                Debug.LogError("Black lady isn't provided");
+                this.enabled = false;
+                return;
+            }
+
+            if (saveComplete == null) {
+                Debug.LogError("saveComplete isn't provided");
+                this.enabled = false;
+                return;
+            }
+
+            newGameBtn.onClick.AddListener(() => { chController.enabled = true; });
+
+            saveBtn.onClick.AddListener(
+                async () => {
+                    chController.enabled = true;
+
+                    await Manifestation(curve1, 1f);
+                    await Manifestation(curve3, 1f);
+                    await Manifestation(curve2, 2f);
+                }
+            );
 
             chController.gameOver += OpenMenu;
         }
 
         public void OpenMenu() {
             menu.SetActive(!menu.activeSelf);
-            chController.enabled = true;
-            if (menu.activeSelf) {
-                chController.enabled = false;
-            }
+            chController.enabled = !menu.activeSelf;
         }
 
         public void OpenLoadPanel() {
@@ -73,9 +113,7 @@ namespace ui {
                 var loadTransform = loaderObj.transform.GetChild(2);
                 var loadBtn = loadTransform.GetComponent<Button>();
                 loadBtn.onClick.AddListener(() => {
-                    chController.selHighlight.SetActive(false);
-                    chController.map.board = chController.BoardFromCSV(saveInfo.csvPath);
-                    chController.FillCheckers(chController.map.board);
+                    chController.LoadGame(saveInfo.csvPath);
                     menu.SetActive(false);
                     loadPanel.SetActive(false);
                     chController.enabled = true;
@@ -101,19 +139,11 @@ namespace ui {
             }
         }
 
-        public async Task Manifestation() {
+        public async Task Manifestation(AnimationCurve curve, float speed) {
             var color = saveComplete.color;
-            for (float i = 0f; i <= 1f; i += 2f * Time.deltaTime) {
+            for (float currentTime = 0f; currentTime <= 1f; currentTime += Time.deltaTime * speed) {
                 await Task.Yield();
-                saveComplete.color = new Color(color.r, color.g, color.b, i);
-            }
-        }
-
-        public async Task Decay() {
-            var color = saveComplete.color;
-            for (float i = 1f; i > 0f; i -= 2f * Time.deltaTime) {
-                await Task.Yield();
-                saveComplete.color = new Color(color.r, color.g, color.b, i);
+                saveComplete.color = new Color(color.r, color.g, color.b, curve.Evaluate (currentTime));
             }
         }
     }

@@ -48,14 +48,13 @@ namespace controller {
     public class CheckersController : MonoBehaviour {
         public Resources resources;
         public GameObject checkers;
-        public GameObject selHighlight;
+        public GameObject screenCamera;
 
-
-        public Camera screenCamera;
         public Map map;
 
         public event Action gameOver;
 
+        private GameObject selHighlight;
         private GameObject highlightsObj;
         private bool needAttack;
 
@@ -460,7 +459,7 @@ namespace controller {
 
             string output = CSV.Generate(cells);
             try {
-                File.WriteAllText(filePath + ".csv", output);
+                File.WriteAllText(filePath + ".save", output);
             } catch (FileNotFoundException e) {
                 Debug.LogError(e);
                 return;
@@ -469,11 +468,12 @@ namespace controller {
 
         public void Screenshot(string filePath) {
             RenderTexture currentRT = RenderTexture.active;
-            RenderTexture.active = screenCamera.targetTexture;
+            var camera = screenCamera.GetComponent<Camera>();
+            RenderTexture.active = camera.targetTexture;
 
-            screenCamera.Render();
-            var width = screenCamera.targetTexture.width;
-            var height = screenCamera.targetTexture.height;
+            camera.Render();
+            var width = camera.targetTexture.width;
+            var height = camera.targetTexture.height;
 
             Texture2D texture = new Texture2D(width, height);
 
@@ -563,7 +563,7 @@ namespace controller {
         public List<SaveInfo> GetSaveInfos(string pathToFolder) {
             string[] allfiles;
             try {
-                allfiles = Directory.GetFiles(pathToFolder, "*.csv");
+                allfiles = Directory.GetFiles(pathToFolder, "*.save");
             } catch (Exception e) {
                 allfiles = default;
                 Debug.LogError(e);
@@ -578,7 +578,7 @@ namespace controller {
                 saveInfo.name = saveName;
 
                 try {
-                    byte[] data = File.ReadAllBytes(filename.Replace(".csv", ".png"));
+                    byte[] data = File.ReadAllBytes(filename.Replace(".save", ".png"));
                     Texture2D tex = new Texture2D(2, 2);
                     tex.LoadImage(data);
                     saveInfo.texture2D = tex;
@@ -588,11 +588,31 @@ namespace controller {
                 }
 
                 saveInfo.csvPath = filename;
-                saveInfo.pngPath = filename.Replace(".csv", ".png");
+                saveInfo.pngPath = filename.Replace(".save", ".png");
                 saveInfos.Add(saveInfo);
             }
 
             return saveInfos;
+        }
+
+        public void SaveGame() {
+            var date = DateTime.Now.ToString("dd.MM.yyyy HH-mm-ss");
+            var filePath = Path.Combine(Application.persistentDataPath, date);
+            boardToCSV(map.board, filePath);
+            Screenshot(filePath);
+        }
+
+        public void NewGame() {
+            var newGamePath = Path.Combine(Application.streamingAssetsPath, "newgame.save");
+            selHighlight.SetActive(false);
+            map.board = BoardFromCSV(newGamePath);
+            FillCheckers(map.board);
+        }
+
+        public void LoadGame(string path) {
+            selHighlight.SetActive(false);
+            map.board = BoardFromCSV(path);
+            FillCheckers(map.board);
         }
 
         public bool IsOnBoard<T>(Vector2Int pos, Option<T>[,] board) {
