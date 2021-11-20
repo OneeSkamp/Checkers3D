@@ -4,6 +4,7 @@ using controller;
 using System;
 using System.IO;
 using UnityEngine.UI;
+using option;
 
 namespace ui {
     public class UiController : MonoBehaviour {
@@ -18,6 +19,11 @@ namespace ui {
         public AnimationCurve curve1;
         public AnimationCurve curve2;
         public AnimationCurve curve3;
+
+        public RawImage blackCh;
+        public RawImage whiteCh;
+        public RawImage blackLady;
+        public RawImage whiteLady;
 
         private void Awake() {
             if (chController == null) {
@@ -73,10 +79,9 @@ namespace ui {
             saveBtn.onClick.AddListener(
                 async () => {
                     chController.enabled = true;
-
-                    await Manifestation(curve1, 1f);
-                    await Manifestation(curve3, 1f);
-                    await Manifestation(curve2, 2f);
+                    await changeTextAlpha(curve1, 1f);
+                    await changeTextAlpha(curve3, 1f);
+                    await changeTextAlpha(curve2, 2f);
                 }
             );
 
@@ -107,8 +112,7 @@ namespace ui {
 
                 var imageObj = loaderObj.transform.GetChild(1);
                 var image = imageObj.GetComponent<RawImage>();
-
-                image.texture = saveInfo.texture2D;
+                FillImageBoard(image, saveInfo.board);
 
                 var loadTransform = loaderObj.transform.GetChild(2);
                 var loadBtn = loadTransform.GetComponent<Button>();
@@ -139,11 +143,46 @@ namespace ui {
             }
         }
 
-        public async Task Manifestation(AnimationCurve curve, float speed) {
+        public void FillImageBoard(RawImage image, Option<Checker>[,] board) {
+            for (int i = 0; i < board.GetLength(0); i++) {
+                for (int j = 0; j < board.GetLength(1); j++) {
+                    if (board[i, j].IsNone()) continue;
+                    var ch = board[i, j].Peel();
+                    RawImage checker = null;
+                    if (ch.color == ChColor.White) {
+                        if (ch.type == ChType.Basic) {
+                            checker = whiteCh;
+                        }
+
+                        if (ch.type == ChType.Lady) {
+                            checker = whiteLady;
+                        }
+                    }
+
+                    if (ch.color == ChColor.Black) {
+                        if (ch.type == ChType.Basic) {
+                            checker = blackCh;
+                        }
+
+                        if (ch.type == ChType.Lady) {
+                            checker = blackLady;
+                        }
+                    }
+
+                    var img = Instantiate(checker);
+                    img.transform.SetParent(image.transform);
+                    var cell = new Vector2Int(i, j);
+                    Debug.Log(chController.ToCellOnImage(cell));
+                    img.transform.localPosition = chController.ToCellOnImage(cell);
+                }
+            }
+        }
+
+        public async Task changeTextAlpha(AnimationCurve curve, float speed) {
             var color = saveComplete.color;
-            for (float currentTime = 0f; currentTime <= 1f; currentTime += Time.deltaTime * speed) {
+            for (float time = 0f; time <= 1f; time += Time.deltaTime * speed) {
                 await Task.Yield();
-                saveComplete.color = new Color(color.r, color.g, color.b, curve.Evaluate (currentTime));
+                saveComplete.color = new Color(color.r, color.g, color.b, curve.Evaluate(time));
             }
         }
     }

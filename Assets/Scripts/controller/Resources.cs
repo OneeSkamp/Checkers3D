@@ -5,6 +5,8 @@ namespace controller {
         public Transform boardTransform;
         public Transform leftTop;
         public Transform offset;
+        public Transform leftTopImage;
+        public Transform offsetImage;
 
         public GameObject whiteChecker;
         public GameObject blackChecker;

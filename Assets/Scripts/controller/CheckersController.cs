@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using System;
 using UnityEngine;
 using System.Collections.Generic;
@@ -35,7 +36,8 @@ namespace controller {
 
     public struct SaveInfo {
         public string name;
-        public Texture2D texture2D;
+        // public Texture2D texture2D;
+        public Option<Checker>[,] board;
         public string csvPath;
         public string pngPath;
     }
@@ -53,6 +55,7 @@ namespace controller {
         public Map map;
 
         public event Action gameOver;
+        public event Func<AnimationCurve, float, Task> saveGame;
 
         private GameObject selHighlight;
         private GameObject highlightsObj;
@@ -460,35 +463,10 @@ namespace controller {
             string output = CSV.Generate(cells);
             try {
                 File.WriteAllText(filePath + ".save", output);
+
             } catch (FileNotFoundException e) {
                 Debug.LogError(e);
                 return;
-            }
-        }
-
-        public void Screenshot(string filePath) {
-            RenderTexture currentRT = RenderTexture.active;
-            var camera = screenCamera.GetComponent<Camera>();
-            RenderTexture.active = camera.targetTexture;
-
-            camera.Render();
-            var width = camera.targetTexture.width;
-            var height = camera.targetTexture.height;
-
-            Texture2D texture = new Texture2D(width, height);
-
-            Rect rect = new Rect(0, 0, width, height);
-            texture.ReadPixels(rect, 0, 0);
-            texture.Apply();
-            RenderTexture.active = currentRT;
-
-            var Bytes = texture.EncodeToPNG();
-            Destroy(texture);
-
-            try {
-                File.WriteAllBytes(filePath + ".png", Bytes);
-            } catch (Exception e) {
-                Debug.LogError(e);
             }
         }
 
@@ -572,20 +550,11 @@ namespace controller {
             var saveInfos = new List<SaveInfo>();
             foreach (string filename in allfiles) {
                 var saveInfo = new SaveInfo();
+                saveInfo.board = BoardFromCSV(filename);
                 var saveName = filename.Replace(pathToFolder, "");
                 saveName = saveName.Replace("\\", "");
                 saveName = saveName.Replace(".csv", "");
                 saveInfo.name = saveName;
-
-                try {
-                    byte[] data = File.ReadAllBytes(filename.Replace(".save", ".png"));
-                    Texture2D tex = new Texture2D(2, 2);
-                    tex.LoadImage(data);
-                    saveInfo.texture2D = tex;
-                } catch (Exception e ) {
-                    Debug.LogError(e);
-                    continue;
-                }
 
                 saveInfo.csvPath = filename;
                 saveInfo.pngPath = filename.Replace(".save", ".png");
@@ -599,7 +568,6 @@ namespace controller {
             var date = DateTime.Now.ToString("dd.MM.yyyy HH-mm-ss");
             var filePath = Path.Combine(Application.persistentDataPath, date);
             boardToCSV(map.board, filePath);
-            Screenshot(filePath);
         }
 
         public void NewGame() {
@@ -613,6 +581,14 @@ namespace controller {
             selHighlight.SetActive(false);
             map.board = BoardFromCSV(path);
             FillCheckers(map.board);
+        }
+
+        public Vector3 ToCellOnImage(Vector2Int cell) {
+            var offset = resources.offsetImage.localPosition;
+            var leftTop = resources.leftTopImage.localPosition;
+            var x = leftTop.x + (25 * cell.y + 12.5f);
+            var y = leftTop.y - (25 * cell.x + 12.5f);
+            return new Vector3(x, y, 0f);
         }
 
         public bool IsOnBoard<T>(Vector2Int pos, Option<T>[,] board) {
