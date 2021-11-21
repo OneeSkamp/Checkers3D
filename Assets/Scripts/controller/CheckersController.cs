@@ -1,4 +1,3 @@
-using System.Threading.Tasks;
 using System;
 using UnityEngine;
 using System.Collections.Generic;
@@ -35,11 +34,10 @@ namespace controller {
     }
 
     public struct SaveInfo {
-        public string name;
-        // public Texture2D texture2D;
+        public string date;
         public Option<Checker>[,] board;
-        public string csvPath;
-        public string pngPath;
+        public ChColor moveColor;
+        public string savePath;
     }
 
     public struct Map {
@@ -55,7 +53,8 @@ namespace controller {
         public Map map;
 
         public event Action gameOver;
-        public event Func<AnimationCurve, float, Task> saveGame;
+        public event Action saveGameOff;
+        public event Action saveGameOn;
 
         private GameObject selHighlight;
         private GameObject highlightsObj;
@@ -178,6 +177,7 @@ namespace controller {
 
                 if (possibleMoves.Count == 0) {
                     gameOver?.Invoke();
+                    saveGameOff?.Invoke();
                     this.enabled = false;
                 }
             }
@@ -411,7 +411,7 @@ namespace controller {
         public Vector3 ToCenterCell(Vector2Int cell) {
             var offset = resources.offset.localPosition;
             var leftTop = resources.leftTop.localPosition;
-            return new Vector3(-cell.y, 0.51f, cell.x) * 2 + leftTop - offset;
+            return new Vector3(-cell.y, 0.56f, cell.x) * 2 + leftTop - offset;
         }
 
         public Vector2Int ToCell(Vector3 globalPoint, Vector3 leftTopPos) {
@@ -420,7 +420,7 @@ namespace controller {
             return new Vector2Int(Mathf.Abs((int)intermediate.z), Mathf.Abs((int)intermediate.x));
         }
 
-        public void boardToCSV(Option<Checker>[,] board, string filePath) {
+        public void BoardToCSV(Option<Checker>[,] board, string filePath) {
             var cells = new List<List<string>>();
             for (int i = 0; i < map.board.GetLength(0); i++) {
                 var cellsRow = new List<string>();
@@ -430,20 +430,14 @@ namespace controller {
                         var ch = map.board[i, j].Peel();
 
                         if (ch.type == ChType.Basic) {
-                            if (ch.color == ChColor.White) {
-                                strCh = "0";
-                            }
-
+                            strCh = "0";
                             if (ch.color == ChColor.Black) {
                                 strCh = "1";
                             }
                         }
 
                         if (ch.type == ChType.Lady) {
-                            if (ch.color == ChColor.White) {
-                                strCh = "2";
-                            }
-
+                            strCh = "2";
                             if (ch.color == ChColor.Black) {
                                 strCh = "3";
                             }
@@ -455,9 +449,9 @@ namespace controller {
             }
 
             if (moveClr == ChColor.White) {
-                cells.Add(new List<string> {"4"});
+                cells.Add(new List<string> {"0"});
             } else {
-                cells.Add(new List<string> {"3"});
+                cells.Add(new List<string> {"1"});
             }
 
             string output = CSV.Generate(cells);
@@ -498,15 +492,6 @@ namespace controller {
                     }
 
                     var value = Int32.Parse(cell);
-                    if (value == 3) {
-                        moveClr = ChColor.Black;
-                        continue;
-                    }
-
-                    if (value == 4) {
-                        moveClr = ChColor.White;
-                        continue;
-                    }
 
                     var color = ChColor.Black;
                     if (value % 2 == 0) {
@@ -518,7 +503,17 @@ namespace controller {
                         chType = ChType.Lady;
                     }
 
-                    if (x >= size.x || y >= size.y) continue;
+                    if (x >= size.x || y >= size.y) {
+                        if (value == 1) {
+                            moveClr = ChColor.Black;
+                        }
+
+                        if (value == 0) {
+                            moveClr = ChColor.White;
+                        }
+
+                        break;
+                    }
                     boardFromCSV[x, y] = Option<Checker>.Some(Checker.Mk(color, chType));
                     y++;
                 }
@@ -529,10 +524,6 @@ namespace controller {
             selected = Option<Vector2Int>.None();
             foreach (Transform item in highlightsObj.transform) {
                 Destroy(item.gameObject);
-            }
-
-            foreach (var obj in map.figures) {
-                Destroy(obj);
             }
 
             return boardFromCSV;
@@ -551,13 +542,11 @@ namespace controller {
             foreach (string filename in allfiles) {
                 var saveInfo = new SaveInfo();
                 saveInfo.board = BoardFromCSV(filename);
-                var saveName = filename.Replace(pathToFolder, "");
-                saveName = saveName.Replace("\\", "");
-                saveName = saveName.Replace(".csv", "");
-                saveInfo.name = saveName;
+                saveInfo.moveColor = moveClr;
+                var date = File.GetCreationTime(filename).ToString("dd.MM.yyyy HH:mm:ss");
+                saveInfo.date = date;
 
-                saveInfo.csvPath = filename;
-                saveInfo.pngPath = filename.Replace(".save", ".png");
+                saveInfo.savePath = filename;
                 saveInfos.Add(saveInfo);
             }
 
@@ -565,21 +554,30 @@ namespace controller {
         }
 
         public void SaveGame() {
-            var date = DateTime.Now.ToString("dd.MM.yyyy HH-mm-ss");
-            var filePath = Path.Combine(Application.persistentDataPath, date);
-            boardToCSV(map.board, filePath);
+            var name = $@"{Guid.NewGuid()}.save";
+            var filePath = Path.Combine(Application.persistentDataPath, name);
+            BoardToCSV(map.board, filePath);
         }
 
         public void NewGame() {
             var newGamePath = Path.Combine(Application.streamingAssetsPath, "newgame.save");
             selHighlight.SetActive(false);
             map.board = BoardFromCSV(newGamePath);
+            saveGameOn?.Invoke();
+            foreach (var obj in map.figures) {
+                Destroy(obj);
+            }
             FillCheckers(map.board);
         }
 
         public void LoadGame(string path) {
             selHighlight.SetActive(false);
+            selHighlight.SetActive(false);
             map.board = BoardFromCSV(path);
+            foreach (var obj in map.figures) {
+                Destroy(obj);
+            }
+            saveGameOn?.Invoke();
             FillCheckers(map.board);
         }
 

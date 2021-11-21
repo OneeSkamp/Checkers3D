@@ -426,7 +426,7 @@ GameObject:
   - component: {fileID: 539935852}
   - component: {fileID: 539935851}
   m_Layer: 5
-  m_Name: RawImage
+  m_Name: SaveImage
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1574,7 +1574,7 @@ MonoBehaviour:
     m_Top: 0
     m_Bottom: 0
   m_ChildAlignment: 0
-  m_Spacing: 0
+  m_Spacing: 10
   m_ChildForceExpandWidth: 1
   m_ChildForceExpandHeight: 1
   m_ChildControlWidth: 1

@@ -16,9 +16,10 @@ namespace ui {
         public Button newGameBtn;
         public Button saveBtn;
         public Text saveComplete;
-        public AnimationCurve curve1;
-        public AnimationCurve curve2;
-        public AnimationCurve curve3;
+
+        public AnimationCurve downUp;
+        public AnimationCurve upDown;
+        public AnimationCurve line;
 
         public RawImage blackCh;
         public RawImage whiteCh;
@@ -79,13 +80,16 @@ namespace ui {
             saveBtn.onClick.AddListener(
                 async () => {
                     chController.enabled = true;
-                    await changeTextAlpha(curve1, 1f);
-                    await changeTextAlpha(curve3, 1f);
-                    await changeTextAlpha(curve2, 2f);
+                    await changeTextAlpha(downUp, 1f);
+                    await changeTextAlpha(line, 1f);
+                    await changeTextAlpha(upDown, 2f);
                 }
             );
 
             chController.gameOver += OpenMenu;
+
+            chController.saveGameOff += () => { saveBtn.gameObject.SetActive(false); };
+            chController.saveGameOn += () => { saveBtn.gameObject.SetActive(true); };
         }
 
         public void OpenMenu() {
@@ -106,18 +110,18 @@ namespace ui {
                 loaderObj.transform.SetParent(content.transform);
                 loaderObj.transform.localScale = new Vector3(1f, 1f, 1f);
 
-                var textObj = loaderObj.transform.GetChild(0);
-                var text = textObj.GetComponent<Text>();
-                text.text = saveInfo.name;
+                var textTransform = loaderObj.transform.GetChild(0);
+                var text = textTransform.GetComponent<Text>();
+                text.text = saveInfo.date;
 
-                var imageObj = loaderObj.transform.GetChild(1);
-                var image = imageObj.GetComponent<RawImage>();
+                var imageTransform = loaderObj.transform.GetChild(1);
+                var image = imageTransform.GetComponent<RawImage>();
                 FillImageBoard(image, saveInfo.board);
 
                 var loadTransform = loaderObj.transform.GetChild(2);
                 var loadBtn = loadTransform.GetComponent<Button>();
                 loadBtn.onClick.AddListener(() => {
-                    chController.LoadGame(saveInfo.csvPath);
+                    chController.LoadGame(saveInfo.savePath);
                     menu.SetActive(false);
                     loadPanel.SetActive(false);
                     chController.enabled = true;
@@ -129,17 +133,17 @@ namespace ui {
                 deleteBtn.onClick.AddListener(() => {
                     Destroy(loaderObj);
                     try {
-                        File.Delete(saveInfo.csvPath);
-                    } catch (Exception e) {
-                        Debug.LogError(e);
-                    }
-
-                    try {
-                        File.Delete(saveInfo.pngPath);
+                        File.Delete(saveInfo.savePath);
                     } catch (Exception e) {
                         Debug.LogError(e);
                     }
                 });
+
+                var moveColorTransform = loaderObj.transform.GetChild(5);
+                var moveClrText = moveColorTransform.GetComponent<Text>();
+                if (saveInfo.moveColor == ChColor.White) {
+                    moveClrText.text = "WHITE";
+                }
             }
         }
 
@@ -150,20 +154,14 @@ namespace ui {
                     var ch = board[i, j].Peel();
                     RawImage checker = null;
                     if (ch.color == ChColor.White) {
-                        if (ch.type == ChType.Basic) {
-                            checker = whiteCh;
-                        }
-
+                        checker = whiteCh;
                         if (ch.type == ChType.Lady) {
                             checker = whiteLady;
                         }
                     }
 
                     if (ch.color == ChColor.Black) {
-                        if (ch.type == ChType.Basic) {
-                            checker = blackCh;
-                        }
-
+                        checker = blackCh;
                         if (ch.type == ChType.Lady) {
                             checker = blackLady;
                         }
@@ -172,7 +170,6 @@ namespace ui {
                     var img = Instantiate(checker);
                     img.transform.SetParent(image.transform);
                     var cell = new Vector2Int(i, j);
-                    Debug.Log(chController.ToCellOnImage(cell));
                     img.transform.localPosition = chController.ToCellOnImage(cell);
                 }
             }
