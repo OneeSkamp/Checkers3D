@@ -79,9 +79,9 @@ namespace ui {
 
             chController.savedSuccessfully += async () => {
                 chController.enabled = true;
-                await changeTextAlpha(downUp, 1f);
-                await changeTextAlpha(line, 1f);
-                await changeTextAlpha(upDown, 2f);
+                await ChangeTextAlpha(downUp, 1f);
+                await ChangeTextAlpha(line, 1f);
+                await ChangeTextAlpha(upDown, 2f);
             };
 
             chController.gameOver += OpenMenu;
@@ -173,7 +173,7 @@ namespace ui {
             }
         }
 
-        public async Task changeTextAlpha(AnimationCurve curve, float speed) {
+        public async Task ChangeTextAlpha(AnimationCurve curve, float speed) {
             var color = saveComplete.color;
             for (float time = 0f; time <= 1f; time += Time.deltaTime * speed) {
                 await Task.Yield();

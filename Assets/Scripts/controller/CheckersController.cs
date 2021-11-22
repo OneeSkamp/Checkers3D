@@ -48,7 +48,6 @@ namespace controller {
     public class CheckersController : MonoBehaviour {
         public Resources resources;
         public GameObject checkers;
-        public GameObject screenCamera;
 
         public Map map;
 
