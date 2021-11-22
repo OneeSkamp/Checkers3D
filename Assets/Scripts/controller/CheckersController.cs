@@ -578,14 +578,6 @@ namespace controller {
             FillCheckers(map.board);
         }
 
-        public Vector3 ToCellOnImage(Vector2Int cell) {
-            var offset = resources.offsetImage.localPosition;
-            var leftTop = resources.leftTopImage.localPosition;
-            var x = leftTop.x + (25 * cell.y + 12.5f);
-            var y = leftTop.y - (25 * cell.x + 12.5f);
-            return new Vector3(x, y, 0f);
-        }
-
         public bool IsOnBoard<T>(Vector2Int pos, Option<T>[,] board) {
             var size = new Vector2Int(board.GetLength(0), board.GetLength(1));
             if (pos.x < 0 || pos.y < 0 || pos.x >= size.x || pos.y >= size.y) {
