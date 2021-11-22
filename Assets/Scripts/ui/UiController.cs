@@ -77,14 +77,12 @@ namespace ui {
 
             newGameBtn.onClick.AddListener(() => { chController.enabled = true; });
 
-            saveBtn.onClick.AddListener(
-                async () => {
-                    chController.enabled = true;
-                    await changeTextAlpha(downUp, 1f);
-                    await changeTextAlpha(line, 1f);
-                    await changeTextAlpha(upDown, 2f);
-                }
-            );
+            chController.savedSuccessfully += async () => {
+                chController.enabled = true;
+                await changeTextAlpha(downUp, 1f);
+                await changeTextAlpha(line, 1f);
+                await changeTextAlpha(upDown, 2f);
+            };
 
             chController.gameOver += OpenMenu;
 

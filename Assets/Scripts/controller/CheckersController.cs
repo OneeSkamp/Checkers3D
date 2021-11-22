@@ -55,6 +55,7 @@ namespace controller {
         public event Action gameOver;
         public event Action saveGameOff;
         public event Action saveGameOn;
+        public event Action savedSuccessfully;
 
         private GameObject selHighlight;
         private GameObject highlightsObj;
@@ -420,50 +421,6 @@ namespace controller {
             return new Vector2Int(Mathf.Abs((int)intermediate.z), Mathf.Abs((int)intermediate.x));
         }
 
-        public void BoardToCSV(Option<Checker>[,] board, string filePath) {
-            var cells = new List<List<string>>();
-            for (int i = 0; i < map.board.GetLength(0); i++) {
-                var cellsRow = new List<string>();
-                for (int j = 0; j < map.board.GetLength(1); j++) {
-                    var strCh = "";
-                    if (map.board[i, j].IsSome()) {
-                        var ch = map.board[i, j].Peel();
-
-                        if (ch.type == ChType.Basic) {
-                            strCh = "0";
-                            if (ch.color == ChColor.Black) {
-                                strCh = "1";
-                            }
-                        }
-
-                        if (ch.type == ChType.Lady) {
-                            strCh = "2";
-                            if (ch.color == ChColor.Black) {
-                                strCh = "3";
-                            }
-                        }
-                    }
-                    cellsRow.Add(strCh);
-                }
-                cells.Add(cellsRow);
-            }
-
-            if (moveClr == ChColor.White) {
-                cells.Add(new List<string> {"0"});
-            } else {
-                cells.Add(new List<string> {"1"});
-            }
-
-            string output = CSV.Generate(cells);
-            try {
-                File.WriteAllText(filePath + ".save", output);
-
-            } catch (FileNotFoundException e) {
-                Debug.LogError(e);
-                return;
-            }
-        }
-
         public Option<Checker>[,] BoardFromCSV(string path) {
             if (path == null) {
                 Debug.LogError("Path is null");
@@ -556,7 +513,48 @@ namespace controller {
         public void SaveGame() {
             var name = $@"{Guid.NewGuid()}.save";
             var filePath = Path.Combine(Application.persistentDataPath, name);
-            BoardToCSV(map.board, filePath);
+
+            var cells = new List<List<string>>();
+            for (int i = 0; i < map.board.GetLength(0); i++) {
+                var cellsRow = new List<string>();
+                for (int j = 0; j < map.board.GetLength(1); j++) {
+                    var strCh = "";
+                    if (map.board[i, j].IsSome()) {
+                        var ch = map.board[i, j].Peel();
+
+                        if (ch.type == ChType.Basic) {
+                            strCh = "0";
+                            if (ch.color == ChColor.Black) {
+                                strCh = "1";
+                            }
+                        }
+
+                        if (ch.type == ChType.Lady) {
+                            strCh = "2";
+                            if (ch.color == ChColor.Black) {
+                                strCh = "3";
+                            }
+                        }
+                    }
+                    cellsRow.Add(strCh);
+                }
+                cells.Add(cellsRow);
+            }
+
+            if (moveClr == ChColor.White) {
+                cells.Add(new List<string> {"0"});
+            } else {
+                cells.Add(new List<string> {"1"});
+            }
+
+            string output = CSV.Generate(cells);
+            try {
+                File.WriteAllText(filePath + ".save", output);
+                savedSuccessfully?.Invoke();
+            } catch (FileNotFoundException e) {
+                Debug.LogError(e);
+                return;
+            }
         }
 
         public void NewGame() {
