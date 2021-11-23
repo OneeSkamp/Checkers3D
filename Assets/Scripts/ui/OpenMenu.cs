@@ -4,8 +4,13 @@ using controller;
 namespace ui {
     public class OpenMenu : MonoBehaviour {
         public CheckersController chController;
+
         private void Awake() {
-            chController.gameOver += Open;
+            if (chController == null) {
+                Debug.LogError("Checkers controller isn't provided");
+                this.enabled = false;
+                return;
+            }
         }
 
         public void Open() {

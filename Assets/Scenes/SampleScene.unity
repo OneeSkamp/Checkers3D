@@ -156,6 +156,84 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   resources: {fileID: 73204098}
   checkers: {fileID: 846027679}
+  loadGame:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 1020458043}
+        m_TargetAssemblyTypeName: UnityEngine.GameObject, UnityEngine
+        m_MethodName: SetActive
+        m_Mode: 6
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+      - m_Target: {fileID: 1355994996}
+        m_TargetAssemblyTypeName: UnityEngine.GameObject, UnityEngine
+        m_MethodName: SetActive
+        m_Mode: 6
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+      - m_Target: {fileID: 73204099}
+        m_TargetAssemblyTypeName: ui.SetComponentEnable, ui
+        m_MethodName: SetEnable
+        m_Mode: 6
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 1
+        m_CallState: 2
+      - m_Target: {fileID: 382874525}
+        m_TargetAssemblyTypeName: UnityEngine.GameObject, UnityEngine
+        m_MethodName: SetActive
+        m_Mode: 6
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 1
+        m_CallState: 2
+  gameOver:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 1020458048}
+        m_TargetAssemblyTypeName: ui.OpenMenu, ui
+        m_MethodName: Open
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+      - m_Target: {fileID: 382874525}
+        m_TargetAssemblyTypeName: UnityEngine.GameObject, UnityEngine
+        m_MethodName: SetActive
+        m_Mode: 6
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!4 &73204097
 Transform:
   m_ObjectHideFlags: 0
@@ -185,8 +263,6 @@ MonoBehaviour:
   boardTransform: {fileID: 783480351}
   leftTop: {fileID: 491824622}
   offset: {fileID: 1327242774}
-  leftTopImage: {fileID: 0}
-  offsetImage: {fileID: 0}
   whiteChecker: {fileID: 7093533764990952810, guid: f9f56594e7ec8f34f9a20aefd5928259, type: 3}
   blackChecker: {fileID: 8643687205125802892, guid: 03777c7393dca2b41a1334fa230d517f, type: 3}
   whiteLady: {fileID: 4490116929971832769, guid: 35a6b731ce8e3ff479de645b0d1c9154, type: 3}
@@ -218,7 +294,6 @@ GameObject:
   - component: {fileID: 382874529}
   - component: {fileID: 382874528}
   - component: {fileID: 382874527}
-  - component: {fileID: 382874530}
   m_Layer: 5
   m_Name: Save game
   m_TagString: Untagged
@@ -352,20 +427,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 382874525}
   m_CullTransparentMesh: 1
---- !u!114 &382874530
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 382874525}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5516bf720948a454da5fd0f22e62bedd, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  obj: {fileID: 382874525}
-  chController: {fileID: 73204096}
 --- !u!1 &387812798
 GameObject:
   m_ObjectHideFlags: 0
@@ -569,9 +630,9 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 2019187878}
-        m_TargetAssemblyTypeName: ui.UiController, ui
-        m_MethodName: OpenLoadPanel
+      - m_Target: {fileID: 1355995001}
+        m_TargetAssemblyTypeName: ui.FillLoadPanel, ui
+        m_MethodName: FillPanel
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -604,6 +665,18 @@ MonoBehaviour:
           m_FloatArgument: 0
           m_StringArgument: 
           m_BoolArgument: 1
+        m_CallState: 2
+      - m_Target: {fileID: 73204099}
+        m_TargetAssemblyTypeName: ui.SetComponentEnable, ui
+        m_MethodName: SetEnable
+        m_Mode: 6
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
         m_CallState: 2
 --- !u!114 &763447115
 MonoBehaviour:
@@ -1426,6 +1499,7 @@ GameObject:
   - component: {fileID: 1355995000}
   - component: {fileID: 1355994999}
   - component: {fileID: 1355994998}
+  - component: {fileID: 1355995001}
   m_Layer: 5
   m_Name: Load panel
   m_TagString: Untagged
@@ -1534,6 +1608,21 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1355994996}
   m_CullTransparentMesh: 1
+--- !u!114 &1355995001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1355994996}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2a7dd82a683a1cd41bef8576d7e02079, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  chController: {fileID: 73204096}
+  content: {fileID: 1368409148}
+  loadItem: {fileID: 4212802582830583064, guid: f1d4d339253f31147857d9dace441f81, type: 3}
 --- !u!1 &1368409148
 GameObject:
   m_ObjectHideFlags: 0
@@ -1774,7 +1863,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 2019187878}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: ui.UiController, ui
         m_MethodName: OpenMenu
         m_Mode: 1
@@ -1895,7 +1984,6 @@ RectTransform:
   - {fileID: 1020458044}
   - {fileID: 1355994997}
   - {fileID: 1306398200}
-  - {fileID: 1759394792}
   m_Father: {fileID: 2019187877}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -2043,82 +2131,6 @@ CanvasRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1666699688}
-  m_CullTransparentMesh: 1
---- !u!1 &1759394791
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1759394792}
-  - component: {fileID: 1759394794}
-  - component: {fileID: 1759394793}
-  m_Layer: 5
-  m_Name: Game over panel
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 0
---- !u!224 &1759394792
-RectTransform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1759394791}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_Children:
-  - {fileID: 1993993998}
-  m_Father: {fileID: 1568123873}
-  m_RootOrder: 4
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 228.9035, y: 108.546295}
-  m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &1759394793
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1759394791}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 0.392}
-  m_RaycastTarget: 1
-  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
-  m_Maskable: 1
-  m_OnCullStateChanged:
-    m_PersistentCalls:
-      m_Calls: []
-  m_Sprite: {fileID: 10907, guid: 0000000000000000f000000000000000, type: 0}
-  m_Type: 1
-  m_PreserveAspect: 0
-  m_FillCenter: 1
-  m_FillMethod: 4
-  m_FillAmount: 1
-  m_FillClockwise: 1
-  m_FillOrigin: 0
-  m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 1
---- !u!222 &1759394794
-CanvasRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1759394791}
   m_CullTransparentMesh: 1
 --- !u!1 &1816825569
 GameObject:
@@ -2539,85 +2551,6 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 90, y: -90, z: 0}
---- !u!1 &1993993997
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1993993998}
-  - component: {fileID: 1993994000}
-  - component: {fileID: 1993993999}
-  m_Layer: 5
-  m_Name: Text
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!224 &1993993998
-RectTransform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1993993997}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_Children: []
-  m_Father: {fileID: 1759394792}
-  m_RootOrder: 0
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -0.40843, y: -0.3285}
-  m_SizeDelta: {x: 228.96, y: 42.9294}
-  m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &1993993999
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1993993997}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5f7201a12d95ffc409449d95f23cf332, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_Material: {fileID: 0}
-  m_Color: {r: 0.19607843, g: 0.19607843, b: 0.19607843, a: 1}
-  m_RaycastTarget: 1
-  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
-  m_Maskable: 1
-  m_OnCullStateChanged:
-    m_PersistentCalls:
-      m_Calls: []
-  m_FontData:
-    m_Font: {fileID: 10102, guid: 0000000000000000e000000000000000, type: 0}
-    m_FontSize: 32
-    m_FontStyle: 1
-    m_BestFit: 0
-    m_MinSize: 3
-    m_MaxSize: 40
-    m_Alignment: 4
-    m_AlignByGeometry: 0
-    m_RichText: 1
-    m_HorizontalOverflow: 0
-    m_VerticalOverflow: 0
-    m_LineSpacing: 1
-  m_Text: GAME OVER
---- !u!222 &1993994000
-CanvasRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1993993997}
-  m_CullTransparentMesh: 1
 --- !u!1 &2019187876
 GameObject:
   m_ObjectHideFlags: 0
@@ -2627,7 +2560,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2019187877}
-  - component: {fileID: 2019187878}
   m_Layer: 0
   m_Name: ui
   m_TagString: Untagged
@@ -2650,26 +2582,6 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 5
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &2019187878
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2019187876}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ce12bde4dd348794a95b3dff07e98bc7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  chController: {fileID: 73204096}
-  loadPanel: {fileID: 1355994996}
-  content: {fileID: 1368409148}
-  menu: {fileID: 1020458043}
-  loadItem: {fileID: 4212802582830583064, guid: f1d4d339253f31147857d9dace441f81, type: 3}
-  newGameBtn: {fileID: 859072519}
-  saveBtn: {fileID: 382874527}
-  saveComplete: {fileID: 1306398201}
 --- !u!1 &2107799953
 GameObject:
   m_ObjectHideFlags: 0

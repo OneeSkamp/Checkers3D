@@ -11,7 +11,31 @@ namespace ui {
         public float speed;
 
         private void Awake() {
-            chController.savedSuccessfully += async () => { await ChangeAlpha(); };
+            if (text == null) {
+                Debug.LogError("Text isn't provided");
+                this.enabled = false;
+                return;
+            }
+
+            if (chController == null) {
+                Debug.LogError("Checkers controller isn't provided");
+                this.enabled = false;
+                return;
+            }
+
+            if (curve == null) {
+                Debug.LogError("Curve isn't provided");
+                this.enabled = false;
+                return;
+            }
+
+            if (chController == null) {
+                Debug.LogError("chController isn't provided");
+                this.enabled = false;
+                return;
+            }
+
+            chController.savedSuccessfully += async () => await ChangeAlpha();
         }
 
         public async Task ChangeAlpha() {

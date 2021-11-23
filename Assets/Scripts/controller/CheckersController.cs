@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.Events;
 using System.Collections.Generic;
 using option;
 using System.IO;
@@ -33,11 +34,16 @@ namespace controller {
         }
     }
 
-    public struct SaveInfo {
-        public string date;
+    public struct BoardInfo {
         public Option<Checker>[,] board;
         public ChColor moveColor;
+    }
+
+    public struct SaveInfo {
+        public string date;
+        public string moveColor;
         public string savePath;
+        public Option<Checker>[,] board;
     }
 
     public struct Map {
@@ -51,10 +57,9 @@ namespace controller {
 
         public Map map;
 
-        public event Action gameOver;
-        public event Action saveGameOff;
-        public event Action saveGameOn;
         public event Action savedSuccessfully;
+        public UnityEvent loadGame;
+        public UnityEvent gameOver;
 
         private GameObject selHighlight;
         private GameObject highlightsObj;
@@ -177,7 +182,6 @@ namespace controller {
 
                 if (possibleMoves.Count == 0) {
                     gameOver?.Invoke();
-                    saveGameOff?.Invoke();
                     this.enabled = false;
                 }
             }
@@ -420,7 +424,7 @@ namespace controller {
             return new Vector2Int(Mathf.Abs((int)intermediate.z), Mathf.Abs((int)intermediate.x));
         }
 
-        public Option<Checker>[,] BoardFromCSV(string path) {
+        public BoardInfo BoardInfoFromCSV(string path) {
             if (path == null) {
                 Debug.LogError("Path is null");
             }
@@ -434,7 +438,8 @@ namespace controller {
             }
 
             var size = new Vector2Int(map.board.GetLength(0), map.board.GetLength(1));
-            var boardFromCSV = new Option<Checker>[size.x, size.y];
+            var boardInfo = new BoardInfo();
+            boardInfo.board = new Option<Checker>[size.x, size.y];
 
             var x = 0;
             foreach (var row in rows) {
@@ -442,7 +447,7 @@ namespace controller {
                 var y = 0;
                 foreach (var cell in row) {
                     if (cell == "") {
-                        boardFromCSV[x, y] = Option<Checker>.None();
+                        boardInfo.board[x, y] = Option<Checker>.None();
                         y++;
                         continue;
                     }
@@ -461,16 +466,16 @@ namespace controller {
 
                     if (x >= size.x || y >= size.y) {
                         if (value == 1) {
-                            moveClr = ChColor.Black;
+                            boardInfo.moveColor = ChColor.Black;
                         }
 
                         if (value == 0) {
-                            moveClr = ChColor.White;
+                            boardInfo.moveColor = ChColor.White;
                         }
 
                         break;
                     }
-                    boardFromCSV[x, y] = Option<Checker>.Some(Checker.Mk(color, chType));
+                    boardInfo.board[x, y] = Option<Checker>.Some(Checker.Mk(color, chType));
                     y++;
                 }
                 x++;
@@ -482,7 +487,7 @@ namespace controller {
                 Destroy(item.gameObject);
             }
 
-            return boardFromCSV;
+            return boardInfo;
         }
 
         public List<SaveInfo> GetSaveInfos(string pathToFolder) {
@@ -497,11 +502,21 @@ namespace controller {
             var saveInfos = new List<SaveInfo>();
             foreach (string filename in allfiles) {
                 var saveInfo = new SaveInfo();
-                saveInfo.board = BoardFromCSV(filename);
-                saveInfo.moveColor = moveClr;
-                var date = File.GetCreationTime(filename).ToString("dd.MM.yyyy HH:mm:ss");
-                saveInfo.date = date;
+                var boardInfo = BoardInfoFromCSV(filename);
+                saveInfo.board = boardInfo.board;
+                saveInfo.moveColor = "WHITE";
+                if (boardInfo.moveColor == ChColor.Black) {
+                    saveInfo.moveColor = "BLACK";
+                }
 
+                string date = "";
+                try {
+                    date = File.GetCreationTime(filename).ToString("dd.MM.yyyy HH:mm:ss");
+                } catch (Exception e) {
+                    Debug.LogError(e);
+                }
+
+                saveInfo.date = date;
                 saveInfo.savePath = filename;
                 saveInfos.Add(saveInfo);
             }
@@ -548,7 +563,7 @@ namespace controller {
 
             string output = CSV.Generate(cells);
             try {
-                File.WriteAllText(filePath + ".save", output);
+                File.WriteAllText(filePath, output);
                 savedSuccessfully?.Invoke();
             } catch (FileNotFoundException e) {
                 Debug.LogError(e);
@@ -557,10 +572,12 @@ namespace controller {
         }
 
         public void NewGame() {
-            var newGamePath = Path.Combine(Application.streamingAssetsPath, "newgame.save");
+            var newGamePath = Path.Combine(Application.streamingAssetsPath, "new.save");
             selHighlight.SetActive(false);
-            map.board = BoardFromCSV(newGamePath);
-            saveGameOn?.Invoke();
+            var boardInfo = BoardInfoFromCSV(newGamePath);
+            map.board = boardInfo.board;
+            moveClr = boardInfo.moveColor;
+            loadGame?.Invoke();
             foreach (var obj in map.figures) {
                 Destroy(obj);
             }
@@ -569,13 +586,22 @@ namespace controller {
 
         public void LoadGame(string path) {
             selHighlight.SetActive(false);
-            selHighlight.SetActive(false);
-            map.board = BoardFromCSV(path);
+            var boardInfo = BoardInfoFromCSV(path);
+            map.board = boardInfo.board;
+            moveClr = boardInfo.moveColor;
             foreach (var obj in map.figures) {
                 Destroy(obj);
             }
-            saveGameOn?.Invoke();
+            loadGame?.Invoke();
             FillCheckers(map.board);
+        }
+
+        public void DeleteFile(string path) {
+            try {
+                File.Delete(path);
+            } catch (Exception e) {
+                Debug.LogError(e);
+            }
         }
 
         public bool IsOnBoard<T>(Vector2Int pos, Option<T>[,] board) {

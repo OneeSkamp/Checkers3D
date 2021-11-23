@@ -213,6 +213,7 @@ GameObject:
   - component: {fileID: 7295285921805402249}
   - component: {fileID: 2558583129752682216}
   - component: {fileID: 7233711213096304840}
+  - component: {fileID: 160492644130911299}
   m_Layer: 5
   m_Name: Load
   m_TagString: Untagged
@@ -342,6 +343,18 @@ MonoBehaviour:
   m_FlexibleWidth: -1
   m_FlexibleHeight: -1
   m_LayoutPriority: 1
+--- !u!114 &160492644130911299
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 867073630716579831}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6fcc553866279f84d9587a9a1048206b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1559869427061928592
 GameObject:
   m_ObjectHideFlags: 0
@@ -445,7 +458,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Texture: {fileID: 2800000, guid: 8cc307a599c097244897f6c1723cb702, type: 3}
+  m_Texture: {fileID: 2800000, guid: a1da9f2b91553ed468082e5d73c5b0df, type: 3}
   m_UVRect:
     serializedVersion: 2
     x: 0
@@ -501,6 +514,7 @@ GameObject:
   - component: {fileID: 2774889985639691704}
   - component: {fileID: 5813575241300021530}
   - component: {fileID: 7573804130967260244}
+  - component: {fileID: 4943163033754657497}
   m_Layer: 5
   m_Name: LoadItem
   m_TagString: Untagged
@@ -597,6 +611,23 @@ MonoBehaviour:
   m_ChildScaleWidth: 0
   m_ChildScaleHeight: 0
   m_ReverseArrangement: 0
+--- !u!114 &4943163033754657497
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4212802582830583064}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 81749078381dd674088e4318b3d56acb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  date: {fileID: 6801872907296450846}
+  moveColor: {fileID: 4495027551424513704}
+  loadBtn: {fileID: 2558583129752682216}
+  deleteBtn: {fileID: 1099536770711802587}
+  image: {fileID: 1029176367688934629}
 --- !u!1 &7354882307115740498
 GameObject:
   m_ObjectHideFlags: 0
@@ -610,6 +641,7 @@ GameObject:
   - component: {fileID: 3759935155452357669}
   - component: {fileID: 1099536770711802587}
   - component: {fileID: 5836418347211283758}
+  - component: {fileID: 7486441120680778336}
   m_Layer: 5
   m_Name: Delete
   m_TagString: Untagged
@@ -739,6 +771,18 @@ MonoBehaviour:
   m_FlexibleWidth: -1
   m_FlexibleHeight: -1
   m_LayoutPriority: 1
+--- !u!114 &7486441120680778336
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7354882307115740498}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6fcc553866279f84d9587a9a1048206b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &7835945071533260167
 GameObject:
   m_ObjectHideFlags: 0
