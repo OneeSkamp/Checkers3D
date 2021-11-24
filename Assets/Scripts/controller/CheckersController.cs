@@ -572,7 +572,7 @@ namespace controller {
         }
 
         public void NewGame() {
-            var newGamePath = Path.Combine(Application.streamingAssetsPath, "new.save");
+            var newGamePath = Path.Combine(Application.streamingAssetsPath, "newgame.save");
             selHighlight.SetActive(false);
             var boardInfo = BoardInfoFromCSV(newGamePath);
             map.board = boardInfo.board;
