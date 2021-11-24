@@ -46,13 +46,17 @@ namespace ui {
                     chController.DeleteFile(saveInfo.savePath);
                 };
 
-                loaderObj.GetComponent<FillLoadElement>().Fill(
-                    saveInfo.date,
-                    saveInfo.moveColor,
-                    loadAction,
-                    deleteAction,
-                    saveInfo.board
-                );
+                if (loaderObj.GetComponent<FillLoadElement>() == null) {
+                    Debug.LogError("no component FillLoadElement");
+                } else {
+                    loaderObj.GetComponent<FillLoadElement>().Fill(
+                        saveInfo.date,
+                        saveInfo.moveColor,
+                        loadAction,
+                        deleteAction,
+                        saveInfo.board
+                    );
+                }
             }
         }
     }

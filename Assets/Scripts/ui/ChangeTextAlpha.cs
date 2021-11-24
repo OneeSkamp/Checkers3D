@@ -39,7 +39,7 @@ namespace ui {
         }
 
         public async Task ChangeAlpha() {
-            var color = gameObject.GetComponent<Text>().color;
+            var color = text.color;
             for (float time = 0f; time <= 1f; time += Time.deltaTime * speed) {
                 await Task.Yield();
                 text.color = new Color(color.r, color.g, color.b, curve.Evaluate(time));
