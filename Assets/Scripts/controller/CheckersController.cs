@@ -34,7 +34,7 @@ namespace controller {
         }
     }
 
-    public struct BoardInfo {
+    public struct GameInfo {
         public Option<Checker>[,] board;
         public ChColor moveColor;
     }
@@ -424,7 +424,7 @@ namespace controller {
             return new Vector2Int(Mathf.Abs((int)intermediate.z), Mathf.Abs((int)intermediate.x));
         }
 
-        public BoardInfo BoardInfoFromCSV(string path) {
+        public GameInfo BoardInfoFromCSV(string path) {
             if (path == null) {
                 Debug.LogError("Path is null");
             }
@@ -438,7 +438,7 @@ namespace controller {
             }
 
             var size = new Vector2Int(map.board.GetLength(0), map.board.GetLength(1));
-            var boardInfo = new BoardInfo();
+            var boardInfo = new GameInfo();
             boardInfo.board = new Option<Checker>[size.x, size.y];
 
             var x = 0;
