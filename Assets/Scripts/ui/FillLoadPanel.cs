@@ -29,10 +29,6 @@ namespace ui {
         }
 
         public void FillPanel() {
-            foreach (Transform item in content.transform) {
-                Destroy(item.gameObject);
-            }
-
             var saveInfos = chController.GetSaveInfos(Application.persistentDataPath);
             foreach (var saveInfo in saveInfos) {
                 var loaderObj = Instantiate(loadItem);

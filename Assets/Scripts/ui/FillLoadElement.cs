@@ -8,7 +8,7 @@ using controller;
 namespace ui {
     public class FillLoadElement : MonoBehaviour {
         public Text date;
-        public Text moveColor;
+        public Image moveColor;
         public Button loadBtn;
         public Button deleteBtn;
         public RawImage image;
@@ -47,13 +47,17 @@ namespace ui {
 
         public void Fill(
             string saveDate,
-            string saveMoveColor,
+            ChColor saveMoveColor,
             Action loadAct,
             Action deleteAct,
             Option<Checker>[,] board
         ) {
             date.text = saveDate;
-            moveColor.text = saveMoveColor;
+
+            if (saveMoveColor == ChColor.Black) {
+                moveColor.color = Color.black;
+            }
+
             loadBtn.onClick.AddListener(new UnityAction(loadAct));
             deleteBtn.onClick.AddListener(new UnityAction(deleteAct));
 

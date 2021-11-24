@@ -4,6 +4,7 @@ using UnityEngine.Events;
 using System.Collections.Generic;
 using option;
 using System.IO;
+using System.Globalization;
 
 namespace controller {
     public enum ChColor {
@@ -41,8 +42,8 @@ namespace controller {
 
     public struct SaveInfo {
         public string date;
-        public string moveColor;
         public string savePath;
+        public ChColor moveColor;
         public Option<Checker>[,] board;
     }
 
@@ -504,10 +505,7 @@ namespace controller {
                 var saveInfo = new SaveInfo();
                 var boardInfo = BoardInfoFromCSV(filename);
                 saveInfo.board = boardInfo.board;
-                saveInfo.moveColor = "WHITE";
-                if (boardInfo.moveColor == ChColor.Black) {
-                    saveInfo.moveColor = "BLACK";
-                }
+                saveInfo.moveColor = boardInfo.moveColor;
 
                 string date = "";
                 try {
@@ -520,7 +518,9 @@ namespace controller {
                 saveInfo.savePath = filename;
                 saveInfos.Add(saveInfo);
             }
+            var cultureInfo = new CultureInfo("de-DE");
 
+            saveInfos.Sort((x, y) => DateTime.Compare(DateTime.Parse(y.date, cultureInfo), DateTime.Parse(x.date, cultureInfo)));
             return saveInfos;
         }
 
