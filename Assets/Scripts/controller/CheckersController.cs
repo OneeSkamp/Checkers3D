@@ -520,9 +520,17 @@ namespace controller {
                 saveInfo.savePath = filename;
                 saveInfos.Add(saveInfo);
             }
-            var cultureInfo = new CultureInfo("de-DE");
 
-            saveInfos.Sort((x, y) => DateTime.Compare(DateTime.Parse(y.date, cultureInfo), DateTime.Parse(x.date, cultureInfo)));
+            var cultureInfo = new CultureInfo("de-DE");
+            try {
+                saveInfos.Sort((x, y) => DateTime.Compare(
+                    DateTime.Parse(y.date, cultureInfo),
+                    DateTime.Parse(x.date, cultureInfo))
+                );
+            } catch (Exception e) {
+                Debug.LogError(e);
+            }
+
             return saveInfos;
         }
 
