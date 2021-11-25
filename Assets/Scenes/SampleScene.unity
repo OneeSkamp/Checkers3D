@@ -134,7 +134,6 @@ GameObject:
   - component: {fileID: 73204097}
   - component: {fileID: 73204096}
   - component: {fileID: 73204098}
-  - component: {fileID: 73204099}
   m_Layer: 0
   m_Name: init
   m_TagString: Untagged
@@ -183,9 +182,9 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
-      - m_Target: {fileID: 73204099}
-        m_TargetAssemblyTypeName: ui.SetComponentEnable, ui
-        m_MethodName: SetEnable
+      - m_Target: {fileID: 73204096}
+        m_TargetAssemblyTypeName: UnityEngine.Behaviour, UnityEngine
+        m_MethodName: set_enabled
         m_Mode: 6
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -269,19 +268,6 @@ MonoBehaviour:
   blackLady: {fileID: 6562868862257781079, guid: 658c7957bfe6ca048bc295310fa42b27, type: 3}
   moveHighlight: {fileID: 3011315072822383537, guid: d6d3f9a3d7fa1a940acc3fe863ab07fb, type: 3}
   selectedHighlight: {fileID: 3416308811518889918, guid: ede7a2832d9f97742a70f3c06927f737, type: 3}
---- !u!114 &73204099
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 73204095}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a17fc70a37b3e2b43b85be274536a652, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  component: {fileID: 73204096}
 --- !u!1 &382874525
 GameObject:
   m_ObjectHideFlags: 0
@@ -389,9 +375,9 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
-      - m_Target: {fileID: 73204099}
-        m_TargetAssemblyTypeName: ui.SetComponentEnable, ui
-        m_MethodName: SetEnable
+      - m_Target: {fileID: 73204096}
+        m_TargetAssemblyTypeName: UnityEngine.Behaviour, UnityEngine
+        m_MethodName: set_enabled
         m_Mode: 6
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -562,10 +548,22 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1368409152}
-        m_TargetAssemblyTypeName: ui.DestroyChilds, ui
-        m_MethodName: Destroy
-        m_Mode: 1
+      - m_Target: {fileID: 1020458043}
+        m_TargetAssemblyTypeName: UnityEngine.GameObject, UnityEngine
+        m_MethodName: SetActive
+        m_Mode: 6
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 1
+        m_CallState: 2
+      - m_Target: {fileID: 1355994996}
+        m_TargetAssemblyTypeName: UnityEngine.GameObject, UnityEngine
+        m_MethodName: SetActive
+        m_Mode: 6
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
@@ -798,9 +796,9 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 1
         m_CallState: 2
-      - m_Target: {fileID: 73204099}
-        m_TargetAssemblyTypeName: ui.SetComponentEnable, ui
-        m_MethodName: SetEnable
+      - m_Target: {fileID: 73204096}
+        m_TargetAssemblyTypeName: UnityEngine.Behaviour, UnityEngine
+        m_MethodName: set_enabled
         m_Mode: 6
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -1014,9 +1012,9 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
-      - m_Target: {fileID: 73204099}
-        m_TargetAssemblyTypeName: ui.SetComponentEnable, ui
-        m_MethodName: SetEnable
+      - m_Target: {fileID: 73204096}
+        m_TargetAssemblyTypeName: UnityEngine.Behaviour, UnityEngine
+        m_MethodName: set_enabled
         m_Mode: 6
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -1475,10 +1473,9 @@ GameObject:
   - component: {fileID: 1306398200}
   - component: {fileID: 1306398202}
   - component: {fileID: 1306398201}
-  - component: {fileID: 1306398203}
   - component: {fileID: 1306398204}
   m_Layer: 5
-  m_Name: Save compleate
+  m_Name: Save complete
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1536,7 +1533,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: Save compleate
+  m_Text: Save completed
 --- !u!222 &1306398202
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -1545,63 +1542,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1306398199}
   m_CullTransparentMesh: 1
---- !u!114 &1306398203
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1306398199}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b654c1552b9d2a343a0a107dcb134b77, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  text: {fileID: 1306398201}
-  chController: {fileID: 73204096}
-  curve:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 0
-      inSlope: 3.3282502
-      outSlope: 3.3282502
-      tangentMode: 34
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0.33333334
-    - serializedVersion: 3
-      time: 0.3004582
-      value: 1
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0.33333334
-      outWeight: 0.33333334
-    - serializedVersion: 3
-      time: 0.6977764
-      value: 1
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0.33333334
-      outWeight: 0.33333334
-    - serializedVersion: 3
-      time: 1
-      value: 0
-      inSlope: -3.308808
-      outSlope: -3.308808
-      tangentMode: 34
-      weightedMode: 0
-      inWeight: 0.33333334
-      outWeight: 0
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  speed: 0.5
 --- !u!114 &1306398204
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1741,7 +1681,7 @@ MonoBehaviour:
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 73204099}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: ui.SetComponentEnable, ui
         m_MethodName: SetEnable
         m_Mode: 6
@@ -1817,7 +1757,6 @@ GameObject:
   - component: {fileID: 1368409149}
   - component: {fileID: 1368409150}
   - component: {fileID: 1368409151}
-  - component: {fileID: 1368409152}
   m_Layer: 5
   m_Name: Content
   m_TagString: Untagged
@@ -1884,18 +1823,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_HorizontalFit: 0
   m_VerticalFit: 1
---- !u!114 &1368409152
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1368409148}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e9c702a972c04ad4c94e5c9832bf5b26, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &1419886450
 GameObject:
   m_ObjectHideFlags: 0
@@ -1987,7 +1914,6 @@ GameObject:
   - component: {fileID: 1499593604}
   - component: {fileID: 1499593603}
   - component: {fileID: 1499593602}
-  - component: {fileID: 1499593605}
   m_Layer: 5
   m_Name: Menu
   m_TagString: Untagged
@@ -2095,6 +2021,18 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+      - m_Target: {fileID: 73204096}
+        m_TargetAssemblyTypeName: UnityEngine.Behaviour, UnityEngine
+        m_MethodName: set_enabled
+        m_Mode: 6
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &1499593603
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2133,19 +2071,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1499593600}
   m_CullTransparentMesh: 1
---- !u!114 &1499593605
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1499593600}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a17fc70a37b3e2b43b85be274536a652, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  component: {fileID: 73204096}
 --- !u!1 &1568123872
 GameObject:
   m_ObjectHideFlags: 0
@@ -2501,7 +2426,6 @@ GameObject:
   - component: {fileID: 1933479678}
   - component: {fileID: 1933479681}
   - component: {fileID: 1933479680}
-  - component: {fileID: 1933479679}
   m_Layer: 5
   m_Name: Viewport
   m_TagString: Untagged
@@ -2529,19 +2453,6 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: -17, y: 0}
   m_Pivot: {x: 0, y: 1}
---- !u!114 &1933479679
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1933479677}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 31a19414c41e5ae4aae2af33fee712f6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_ShowMaskGraphic: 0
 --- !u!114 &1933479680
 MonoBehaviour:
   m_ObjectHideFlags: 0

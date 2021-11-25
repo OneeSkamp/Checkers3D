@@ -9,9 +9,12 @@ namespace ui {
     public class FillLoadElement : MonoBehaviour {
         public Text date;
         public Image moveColor;
+        public Image watch;
+        public Image boardImage;
+        public Image checker;
         public Button loadBtn;
         public Button deleteBtn;
-        public RawImage image;
+        public Sprite lady;
 
         private void Awake() {
             if (date == null) {
@@ -38,8 +41,20 @@ namespace ui {
                 return;
             }
 
-            if (image == null) {
+            if (boardImage == null) {
                 Debug.LogError("Image isn't provided");
+                this.enabled = false;
+                return;
+            }
+
+            if (checker == null) {
+                Debug.LogError("Checker checker isn't provided");
+                this.enabled = false;
+                return;
+            }
+
+            if (lady == null) {
+                Debug.LogError("Lady checker isn't provided");
                 this.enabled = false;
                 return;
             }
@@ -61,10 +76,34 @@ namespace ui {
             loadBtn.onClick.AddListener(new UnityAction(loadAct));
             deleteBtn.onClick.AddListener(new UnityAction(deleteAct));
 
-            if (image.GetComponent<FillImageBoard>() == null) {
+            if (watch.GetComponent<SetHandsClock>() == null) {
                 Debug.LogError("no component FillImageBoard");
             } else {
-                image.GetComponent<FillImageBoard>().FillImage(board);
+                watch.GetComponent<SetHandsClock>().SetHands(saveDate);
+            }
+
+            for (int i = 0; i < board.GetLength(0); i++) {
+                for (int j = 0; j < board.GetLength(1); j++) {
+                    if (board[i, j].IsNone()) continue;
+                    var ch = board[i, j].Peel();
+
+                    var figure = Instantiate(checker);
+                    figure.transform.SetParent(boardImage.transform);
+                    if (ch.type == ChType.Lady) {
+                        figure.sprite = lady;
+                    }
+
+                    if (ch.color == ChColor.White) {
+                        figure.color = Color.white;
+                    }
+
+                    var rect = boardImage.GetComponent<RectTransform>().rect;
+
+                    var cell = new Vector2Int(i, j);
+                    var x = -rect.height + (25 * cell.y + 12.5f);
+                    var y = rect.width - (25 * cell.x + 12.5f);
+                    figure.transform.localPosition = new Vector3(x, y, 0f);
+                }
             }
         }
     }
