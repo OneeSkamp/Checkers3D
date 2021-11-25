@@ -61,17 +61,17 @@ namespace ui {
         }
 
         public void Fill(
-            string saveDate,
+            DateTime saveDate,
             ChColor saveMoveColor,
             Action loadAct,
             Action deleteAct,
             Option<Checker>[,] board
         ) {
-            date.text = saveDate;
-
             if (saveMoveColor == ChColor.Black) {
                 moveColor.color = Color.black;
             }
+
+            date.text = saveDate.ToString("dd.MM.yyyy");
 
             loadBtn.onClick.AddListener(new UnityAction(loadAct));
             deleteBtn.onClick.AddListener(new UnityAction(deleteAct));

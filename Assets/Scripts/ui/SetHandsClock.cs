@@ -28,12 +28,7 @@ namespace ui {
             }
         }
 
-        public void SetHands(string dateStr) {
-            if (!DateTime.TryParse(dateStr, out DateTime date)) {
-                Debug.LogError("Attempted conversion of string to DateTime failed");
-                return;
-            }
-
+        public void SetHands(DateTime date) {
             int minute = date.Minute;
             minutesHand.transform.rotation = Quaternion.Euler(0f, 0f, minute * -6);
 
