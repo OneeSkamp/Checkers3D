@@ -10,7 +10,6 @@ namespace ui {
         private Text text;
 
         private void Awake() {
-            duration = 3f;
             if (curve == null) {
                 curve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
             }
@@ -29,9 +28,13 @@ namespace ui {
             }
         }
 
+        private void OnEnable() {
+            timer = 0;
+        }
+
         private void Update() {
             if (timer > duration) {
-                Destroy(this);
+                this.enabled = false;
                 return;
             }
 

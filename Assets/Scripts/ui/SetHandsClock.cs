@@ -9,13 +9,28 @@ namespace ui {
         public Image secondsHand;
 
         private void Awake() {
-            // Debug.Log(DateTime.Now);
-            // SetHands(DateTime.Now.ToString());
+            if (hoursHand == null) {
+                Debug.LogError("This component requires hoursHand");
+                this.enabled = false;
+                return;
+            }
+
+            if (minutesHand == null) {
+                Debug.LogError("This component requires minutesHand");
+                this.enabled = false;
+                return;
+            }
+
+            if (secondsHand == null) {
+                Debug.LogError("This component requires secondsHand");
+                this.enabled = false;
+                return;
+            }
         }
 
         public void SetHands(string dateStr) {
             if (!DateTime.TryParse(dateStr, out DateTime date)) {
-                Debug.LogError("Attempted conversion of date string to date failed");
+                Debug.LogError("Attempted conversion of string to DateTime failed");
                 return;
             }
 

@@ -58,7 +58,7 @@ namespace controller {
 
         public Map map;
 
-        public event Action savedSuccessfully;
+        public UnityEvent savedSuccessfully;
         public UnityEvent loadGame;
         public UnityEvent gameOver;
 
@@ -129,8 +129,6 @@ namespace controller {
 
             map.figures = new GameObject[8, 8];
             map.board = new Option<Checker>[8, 8];
-            FillBoard(map.board);
-            FillCheckers(map.board);
 
             highlightsObj = new GameObject();
             highlightsObj.name = "Highlights";
@@ -140,6 +138,10 @@ namespace controller {
             selHighlight = Instantiate(resources.selectedHighlight);
             selHighlight.transform.SetParent(resources.boardTransform);
             selHighlight.SetActive(false);
+        }
+
+        private void Start() {
+            NewGame();
         }
 
         private void Update() {
