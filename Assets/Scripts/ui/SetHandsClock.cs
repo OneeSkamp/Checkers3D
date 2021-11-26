@@ -4,24 +4,24 @@ using UnityEngine.UI;
 
 namespace ui {
     public class SetHandsClock : MonoBehaviour {
-        public Image hoursHand;
-        public Image minutesHand;
-        public Image secondsHand;
+        public Image hourHand;
+        public Image minuteHand;
+        public Image secondHand;
 
         private void Awake() {
-            if (hoursHand == null) {
+            if (hourHand == null) {
                 Debug.LogError("This component requires hoursHand");
                 this.enabled = false;
                 return;
             }
 
-            if (minutesHand == null) {
+            if (minuteHand == null) {
                 Debug.LogError("This component requires minutesHand");
                 this.enabled = false;
                 return;
             }
 
-            if (secondsHand == null) {
+            if (secondHand == null) {
                 Debug.LogError("This component requires secondsHand");
                 this.enabled = false;
                 return;
@@ -30,16 +30,16 @@ namespace ui {
 
         public void SetHands(DateTime date) {
             int minute = date.Minute;
-            minutesHand.transform.rotation = Quaternion.Euler(0f, 0f, minute * -6);
+            minuteHand.transform.rotation = Quaternion.Euler(0f, 0f, minute * -6);
 
             int second = date.Second;
-            secondsHand.transform.rotation = Quaternion.Euler(0f, 0f, second * -6);
+            secondHand.transform.rotation = Quaternion.Euler(0f, 0f, second * -6);
 
             int hour = date.Hour;
             if (hour > 12) {
                 hour -= 12;
             }
-            hoursHand.transform.rotation = Quaternion.Euler(0f, 0f, hour * -30 - minute / 2);
+            hourHand.transform.rotation = Quaternion.Euler(0f, 0f, hour * -30 - minute / 2);
         }
     }
 }

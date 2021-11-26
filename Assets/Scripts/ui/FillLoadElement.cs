@@ -85,10 +85,11 @@ namespace ui {
             for (int i = 0; i < board.GetLength(0); i++) {
                 for (int j = 0; j < board.GetLength(1); j++) {
                     if (board[i, j].IsNone()) continue;
-                    var ch = board[i, j].Peel();
 
                     var figure = Instantiate(checker);
                     figure.transform.SetParent(boardImage.transform);
+
+                    var ch = board[i, j].Peel();
                     if (ch.type == ChType.Lady) {
                         figure.sprite = lady;
                     }
