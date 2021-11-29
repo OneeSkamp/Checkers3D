@@ -325,6 +325,8 @@ namespace controller {
                                 } else if (nextOpt.IsNone() && chFound) {
                                     moves.Add(MoveCell.Mk(nextPos, true));
                                     if (ch.type == ChType.Basic) break;
+                                } else if (nextOpt.IsNone() && ch.type == ChType.Basic){
+                                    break;
                                 }
 
                                 nextPos += dir;
@@ -578,15 +580,7 @@ namespace controller {
 
         public void NewGame() {
             var newGamePath = Path.Combine(Application.streamingAssetsPath, "newgame.save");
-            selHighlight.SetActive(false);
-            var boardInfo = BoardInfoFromCSV(newGamePath);
-            map.board = boardInfo.board;
-            moveClr = boardInfo.moveColor;
-            loadGame?.Invoke();
-            foreach (var obj in map.figures) {
-                Destroy(obj);
-            }
-            FillCheckers(map.board);
+            LoadGame(newGamePath);
         }
 
         public void LoadGame(string path) {
