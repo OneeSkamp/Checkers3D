@@ -8,6 +8,7 @@ using controller;
 namespace ui {
     public class FillLoadElement : MonoBehaviour {
         public Text date;
+        public Text gameType;
         public Image moveColor;
         public Image watch;
         public Image boardImage;
@@ -63,6 +64,7 @@ namespace ui {
         public void Fill(
             DateTime saveDate,
             ChColor saveMoveColor,
+            GameType type,
             Action loadAct,
             Action deleteAct,
             Option<Checker>[,] board
@@ -72,6 +74,7 @@ namespace ui {
             }
 
             date.text = saveDate.ToString("dd.MM.yyyy");
+            gameType.text = type.ToString();
 
             loadBtn.onClick.AddListener(new UnityAction(loadAct));
             deleteBtn.onClick.AddListener(new UnityAction(deleteAct));

@@ -67,10 +67,11 @@ namespace ui {
                 } else {
                     loaderObj.GetComponent<FillLoadElement>().Fill(
                         saveInfo.date,
-                        saveInfo.moveColor,
+                        saveInfo.boardInfo.moveColor,
+                        saveInfo.boardInfo.type,
                         loadAction,
                         deleteAction,
-                        saveInfo.board
+                        saveInfo.boardInfo.board
                     );
                 }
             }

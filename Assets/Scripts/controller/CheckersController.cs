@@ -16,6 +16,11 @@ namespace controller {
         Lady
     }
 
+    public enum GameType {
+        Russian,
+        English
+    }
+
     public struct Checker {
         public ChColor color;
         public ChType type;
@@ -34,16 +39,16 @@ namespace controller {
         }
     }
 
-    public struct GameInfo {
+    public struct BoardInfo {
         public Option<Checker>[,] board;
+        public GameType type;
         public ChColor moveColor;
     }
 
     public struct SaveInfo {
         public DateTime date;
         public string savePath;
-        public ChColor moveColor;
-        public Option<Checker>[,] board;
+        public BoardInfo boardInfo;
     }
 
     public struct Map {
@@ -55,8 +60,6 @@ namespace controller {
         public Resources resources;
         public GameObject checkers;
 
-        public Map map;
-
         public UnityEvent savedSuccessfully;
         public UnityEvent loadGame;
         public UnityEvent gameOver;
@@ -65,6 +68,8 @@ namespace controller {
         private GameObject highlightsObj;
         private bool needAttack;
 
+        private Map map;
+        private GameType gameType;
         private ChColor moveClr;
         private Option<Vector2Int> selected;
 
@@ -139,10 +144,6 @@ namespace controller {
             selHighlight.SetActive(false);
         }
 
-        private void Start() {
-            NewGame();
-        }
-
         private void Update() {
             if (possibleMoves == null) {
                 possibleMoves = new Dictionary<Vector2Int, List<MoveCell>>();
@@ -163,14 +164,21 @@ namespace controller {
                         foreach (var dir in dirs) {
                             var chFound = false;
                             var nextPos = chPos + dir;
+
+                            var wrongDir = xDir != dir.x && ch.type == ChType.Basic;
+
                             while (IsOnBoard(nextPos, map.board)) {
                                 var nextOpt = map.board[nextPos.x, nextPos.y];
                                 if (nextOpt.IsNone()) {
-                                    var wrongDir = xDir != dir.x && ch.type == ChType.Basic;
                                     if (!chFound && wrongDir) break;
+
                                     moves.Add(MoveCell.Mk(nextPos, chFound));
                                     if (ch.type == ChType.Basic) break;
+                                    if (gameType == GameType.English && ch.type == ChType.Lady) {
+                                        break;
+                                    }
                                 } else {
+                                    if (gameType == GameType.English && wrongDir) break;
                                     var next = nextOpt.Peel();
                                     if (next.color == ch.color || chFound) break;
                                     chFound = true;
@@ -309,6 +317,10 @@ namespace controller {
                         if (chOpt.IsNone() || chOpt.Peel().color != moveClr) return;
                         var ch = chOpt.Peel();
 
+                        var xDir = -1;
+                        if (ch.color == ChColor.Black) {
+                            xDir = 1;
+                        }
                         var moves = new List<MoveCell>();
                         foreach (var dir in dirs) {
                             var chFound = false;
@@ -316,7 +328,10 @@ namespace controller {
                             while (IsOnBoard(nextPos, map.board)) {
                                 var nextOpt = map.board[nextPos.x, nextPos.y];
 
+                                var wrongDir = xDir != dir.x && ch.type == ChType.Basic;
+
                                 if (nextOpt.IsSome()) {
+                                    if (wrongDir && gameType == GameType.English) break;
                                     if (chFound) break;
                                     var next = nextOpt.Peel();
                                     if (attacked.Contains(nextPos)) break;
@@ -325,6 +340,7 @@ namespace controller {
                                 } else if (nextOpt.IsNone() && chFound) {
                                     moves.Add(MoveCell.Mk(nextPos, true));
                                     if (ch.type == ChType.Basic) break;
+                                    if (gameType == GameType.English) break;
                                 } else if (nextOpt.IsNone() && ch.type == ChType.Basic){
                                     break;
                                 }
@@ -428,7 +444,7 @@ namespace controller {
             return new Vector2Int(Mathf.Abs((int)intermediate.z), Mathf.Abs((int)intermediate.x));
         }
 
-        public GameInfo BoardInfoFromCSV(string path) {
+        public BoardInfo BoardInfoFromCSV(string path) {
             if (path == null) {
                 Debug.LogError("Path is null");
             }
@@ -442,7 +458,7 @@ namespace controller {
             }
 
             var size = new Vector2Int(map.board.GetLength(0), map.board.GetLength(1));
-            var boardInfo = new GameInfo();
+            var boardInfo = new BoardInfo();
             boardInfo.board = new Option<Checker>[size.x, size.y];
 
             var x = 0;
@@ -468,13 +484,23 @@ namespace controller {
                         chType = ChType.Lady;
                     }
 
-                    if (x >= size.x || y >= size.y) {
+                    if (x == size.x) {
                         if (value == 1) {
                             boardInfo.moveColor = ChColor.Black;
+                        } else {
+                            boardInfo.moveColor = ChColor.White;
                         }
 
+                        continue;
+                    }
+
+                    if (x == size.x + 1) {
                         if (value == 0) {
-                            boardInfo.moveColor = ChColor.White;
+                            boardInfo.type = GameType.Russian;
+                        }
+
+                        if (value == 1) {
+                            boardInfo.type = GameType.English;
                         }
 
                         break;
@@ -507,8 +533,9 @@ namespace controller {
             foreach (string filename in allfiles) {
                 var saveInfo = new SaveInfo();
                 var boardInfo = BoardInfoFromCSV(filename);
-                saveInfo.board = boardInfo.board;
-                saveInfo.moveColor = boardInfo.moveColor;
+                saveInfo.boardInfo.board = boardInfo.board;
+                saveInfo.boardInfo.moveColor = boardInfo.moveColor;
+                saveInfo.boardInfo.type = gameType;
 
                 var date = new DateTime();
                 try {
@@ -568,19 +595,22 @@ namespace controller {
                 cells.Add(new List<string> {"1"});
             }
 
+            if (gameType == GameType.Russian) {
+                cells.Add(new List<string> {"0"});
+            }
+
+            if (gameType == GameType.English) {
+                cells.Add(new List<string> {"1"});
+            }
+
             string output = CSV.Generate(cells);
             try {
                 File.WriteAllText(filePath, output);
                 savedSuccessfully?.Invoke();
-            } catch (FileNotFoundException e) {
+            } catch (Exception e) {
                 Debug.LogError(e);
                 return;
             }
-        }
-
-        public void NewGame() {
-            var newGamePath = Path.Combine(Application.streamingAssetsPath, "newgame.save");
-            LoadGame(newGamePath);
         }
 
         public void LoadGame(string path) {
@@ -588,6 +618,7 @@ namespace controller {
             var boardInfo = BoardInfoFromCSV(path);
             map.board = boardInfo.board;
             moveClr = boardInfo.moveColor;
+            gameType = boardInfo.type;
             foreach (var obj in map.figures) {
                 Destroy(obj);
             }
