@@ -122,7 +122,7 @@ RectTransform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8194692810154074101}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0.7771459, w: 0.62932044}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
@@ -218,7 +218,7 @@ RectTransform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8194692810182220647}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0.98162717, w: 0.19080906}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
@@ -382,9 +382,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dc305a487ae80fb49a5508a910cdd168, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  hoursHand: {fileID: 8194692810182220649}
-  minutesHand: {fileID: 8194692810154074103}
-  secondsHand: {fileID: 8194692812105874232}
+  hourHand: {fileID: 8194692810182220648}
+  minuteHand: {fileID: 8194692810154074102}
+  secondHand: {fileID: 8194692812105874231}
 --- !u!114 &8194692810639167165
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -457,7 +457,7 @@ RectTransform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8194692812105874230}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: 0, y: -0, z: -0.40673658, w: -0.9135455}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []

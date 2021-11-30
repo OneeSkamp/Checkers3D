@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System;
 using UnityEngine;
 using controller;
@@ -43,6 +44,15 @@ namespace ui {
                 thereIsNothingText.SetActive(false);
             }
 
+            var a = new Dictionary<int, List<SaveInfo>>();
+
+            for (int i = 0; i < saveInfos.Count; i++) {
+                var row = 0;
+                if (i != 0 && i % 4 == 0) {
+                    row++;
+                }
+            }
+
             foreach (Transform item in content.transform) {
                 Destroy(item.gameObject);
             }
@@ -66,12 +76,9 @@ namespace ui {
                     Debug.LogError("no component FillLoadElement");
                 } else {
                     loaderObj.GetComponent<FillLoadElement>().Fill(
-                        saveInfo.date,
-                        saveInfo.boardInfo.moveColor,
-                        saveInfo.boardInfo.type,
+                        saveInfo,
                         loadAction,
-                        deleteAction,
-                        saveInfo.boardInfo.board
+                        deleteAction
                     );
                 }
             }

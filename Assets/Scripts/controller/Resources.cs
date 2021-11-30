@@ -12,6 +12,8 @@ namespace controller {
         public GameObject blackLady;
         public GameObject moveHighlight;
         public GameObject selectedHighlight;
+
+        public TextAsset newEnglishGame;
+        public TextAsset newRussianGame;
     }
 }
-

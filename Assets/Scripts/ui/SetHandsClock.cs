@@ -1,12 +1,11 @@
 using System;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace ui {
     public class SetHandsClock : MonoBehaviour {
-        public Image hourHand;
-        public Image minuteHand;
-        public Image secondHand;
+        public Transform hourHand;
+        public Transform minuteHand;
+        public Transform secondHand;
 
         private void Awake() {
             if (hourHand == null) {

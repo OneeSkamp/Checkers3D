@@ -3,17 +3,12 @@ using UnityEngine.UI;
 
 namespace ui {
     public class TextSmoothOpacity : MonoBehaviour {
-        public AnimationCurve curve;
         public float duration;
 
-        private float timer;
+        private float timeElapsed;
         private Text text;
 
         private void Awake() {
-            if (curve == null) {
-                curve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
-            }
-
             if (duration <= 0f) {
                 Debug.LogError("Duration must be positive float");
                 this.enabled = false;
@@ -28,21 +23,16 @@ namespace ui {
             }
         }
 
-        private void OnEnable() {
-            timer = 0;
-        }
-
         private void Update() {
-            if (timer > duration) {
-                this.enabled = false;
-                return;
+            if (timeElapsed > duration) {
+                Destroy(gameObject);
             }
 
-            timer += Time.deltaTime;
-            var t = Mathf.Clamp(timer / duration, 0f, 1f);
-
             var clr = text.color;
-            text.color = new Color(clr.r, clr.g, clr.b, curve.Evaluate(t));
+            if (timeElapsed < duration) {
+                text.color = new Vector4(clr.r, clr.g, clr.b, duration /timeElapsed);
+                timeElapsed += Time.deltaTime;
+            }
         }
     }
 }

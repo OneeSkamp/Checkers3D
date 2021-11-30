@@ -343,6 +343,8 @@ namespace controller {
                                     if (gameType == GameType.English) break;
                                 } else if (nextOpt.IsNone() && ch.type == ChType.Basic){
                                     break;
+                                } else if (gameType == GameType.English) {
+                                    break;
                                 }
 
                                 nextPos += dir;
