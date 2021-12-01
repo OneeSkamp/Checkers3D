@@ -17,7 +17,7 @@ namespace ui {
         public GameObject watch;
         public Image boardImage;
         public Image checker;
-        public Sprite lady;
+        public Sprite ladyLabel;
     }
 
     [Serializable]
@@ -30,15 +30,6 @@ namespace ui {
         public Texts texts;
         public Images images;
         public Buttns buttns;
-        // public Text date;
-        // public Text gameType;
-        // public Image moveColor;
-        // public Image watch;
-        // public Image boardImage;
-        // public Image checker;
-        // public Button loadBtn;
-        // public Button deleteBtn;
-        // public Sprite lady;
 
         private void Awake() {
             if (texts.date == null) {
@@ -77,7 +68,7 @@ namespace ui {
                 return;
             }
 
-            if (images.lady == null) {
+            if (images.ladyLabel  == null) {
                 Debug.LogError("Lady checker isn't provided");
                 this.enabled = false;
                 return;
@@ -109,12 +100,11 @@ namespace ui {
                 for (int j = 0; j < saveInfo.boardInfo.board.GetLength(1); j++) {
                     if (saveInfo.boardInfo.board[i, j].IsNone()) continue;
 
-                    var figure = Instantiate(images.checker);
-                    figure.transform.SetParent(images.boardImage.transform);
+                    var figure = Instantiate(images.checker, images.boardImage.transform);
 
                     var ch = saveInfo.boardInfo.board[i, j].Peel();
                     if (ch.type == ChType.Lady) {
-                        figure.sprite = images.lady;
+                        figure.sprite = images.ladyLabel ;
                     }
 
                     if (ch.color == ChColor.White) {

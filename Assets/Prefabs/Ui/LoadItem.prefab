@@ -497,10 +497,10 @@ MonoBehaviour:
     gameType: {fileID: 6549767167787685945}
   images:
     moveColor: {fileID: 7838690833513563594}
-    watch: {fileID: 8194692810639167160, guid: 5ab13c72e0297d749918ad85259c3dde, type: 3}
+    watch: {fileID: 8106787605189266527}
     boardImage: {fileID: 3237138860883740533}
     checker: {fileID: 3414144547746841257, guid: 1677e1371a5f60c4784afacd66d93067, type: 3}
-    lady: {fileID: 21300000, guid: 16ded371451a6114caa0df4e36405936, type: 3}
+    ladyLabel: {fileID: 21300000, guid: 16ded371451a6114caa0df4e36405936, type: 3}
   buttns:
     loadBtn: {fileID: 2558583129752682216}
     deleteBtn: {fileID: 1099536770711802587}

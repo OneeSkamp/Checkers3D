@@ -6,6 +6,11 @@ using option;
 using System.IO;
 
 namespace controller {
+    public enum ErrorType {
+        None,
+        DeleteError
+    }
+
     public enum ChColor {
         White,
         Black
@@ -139,8 +144,7 @@ namespace controller {
             highlightsObj.transform.SetParent(resources.boardTransform);
             highlightsObj.transform.localRotation = Quaternion.Euler(0f, 0f, 0f);
 
-            selHighlight = Instantiate(resources.selectedHighlight);
-            selHighlight.transform.SetParent(resources.boardTransform);
+            selHighlight = Instantiate(resources.selectedHighlight,resources.boardTransform);
             selHighlight.SetActive(false);
         }
 
@@ -200,8 +204,7 @@ namespace controller {
                 var moveCells = possibleMoves[selected.Peel()];
                 foreach (var moveCell in moveCells) {
                     if (needAttack && !moveCell.isAttack) continue;
-                    var highlight = Instantiate(resources.moveHighlight);
-                    highlight.transform.SetParent(highlightsObj.transform);
+                    var highlight = Instantiate(resources.moveHighlight, highlightsObj.transform);
                     highlight.transform.localPosition = ToCenterCell(moveCell.pos);
                 }
             }
@@ -288,8 +291,7 @@ namespace controller {
                         map.board[clicked.x, clicked.y] = lady;
 
                         Destroy(map.figures[clicked.x, clicked.y]);
-                        var ladyObj = Instantiate(obj);
-                        ladyObj.transform.SetParent(resources.boardTransform);
+                        var ladyObj = Instantiate(obj, resources.boardTransform);
 
                         var pos = map.figures[clicked.x, clicked.y].transform.localPosition;
                         ladyObj.transform.localPosition = pos;
@@ -425,8 +427,7 @@ namespace controller {
                         }
                     }
 
-                    var checkerObj = Instantiate(prefab);
-                    checkerObj.transform.SetParent(checkers.transform);
+                    var checkerObj = Instantiate(prefab, checkers.transform);
                     checkerObj.transform.localPosition = ToCenterCell(new Vector2Int(i, j));
 
                     map.figures[i, j] = checkerObj;
@@ -628,11 +629,13 @@ namespace controller {
             FillCheckers(map.board);
         }
 
-        public void DeleteFile(string path) {
+        public ErrorType DeleteFile(string path) {
             try {
                 File.Delete(path);
+                return ErrorType.None;
             } catch (Exception e) {
                 Debug.LogError(e);
+                return ErrorType.DeleteError;
             }
         }
 
