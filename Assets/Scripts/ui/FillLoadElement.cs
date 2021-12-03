@@ -75,20 +75,13 @@ namespace ui {
             }
         }
 
-        public void Fill(
-            SaveInfo saveInfo,
-            Action loadAct,
-            Action deleteAct
-        ) {
+        public void Fill(SaveInfo saveInfo) {
             if (saveInfo.boardInfo.moveColor == ChColor.Black) {
                 images.moveColor.color = Color.black;
             }
 
             texts.date.text = saveInfo.date.ToString("dd.MM.yyyy");
             texts.gameType.text = saveInfo.boardInfo.type.ToString();
-
-            buttns.loadBtn.onClick.AddListener(new UnityAction(loadAct));
-            buttns.deleteBtn.onClick.AddListener(new UnityAction(deleteAct));
 
             if (images.watch.GetComponent<SetHandsClock>() == null) {
                 Debug.LogError("no component FillImageBoard");

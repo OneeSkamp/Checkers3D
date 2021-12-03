@@ -1,9 +1,9 @@
-using System.Xml.Serialization;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using controller;
+using UnityEngine.Events;
 
 namespace ui {
     public class LoadPanelController : MonoBehaviour {
@@ -13,15 +13,18 @@ namespace ui {
         public CheckersController chController;
         public GameObject pagePanel;
         public Button pageButton;
+        public Button next;
+        public Button previous;
+        public Button last;
+        public Button first;
 
         public GameObject loadPanel;
         public int rows;
         public int columns;
+        public int pageCountOnPanel;
 
         private List<Button> pageButtons;
         private int currentPage;
-        private Dictionary<int, List<SaveInfo>> pages;
-        // private List<SaveInfo> allSaveInfos;
 
         private void Awake() {
             currentPage = 1;
@@ -62,125 +65,42 @@ namespace ui {
             }
         }
 
-        // public void New1() {
-        //     var rect = loadPanel.GetComponent<RectTransform>().rect;
-        //     var width = rect.width;
-        //     var height = rect.height;
+        public void FillPanel(int page) {
+            var rect = loadPanel.GetComponent<RectTransform>().rect;
+            var width = rect.width;
+            var height = rect.height;
 
-        //     var newWidth = width / columns;
-        //     var newHeight = height / rows;
+            var newWidth = width / columns;
+            var newHeight = height / rows;
 
-        //     var newCellSize = new Vector2(newWidth, newHeight);
+            var newCellSize = new Vector2(newWidth, newHeight);
 
-        //     content.GetComponent<GridLayoutGroup>().cellSize = newCellSize;
-        // }
-
-        // public void FillPanel(int page) {
-        //     foreach (Transform item in pagePanel.transform) {
-        //         Destroy(item.gameObject);
-        //     }
-
-        //     pageButtons = new List<Button>();
-
-        //     UpdatePages();
-
-        //     foreach (var e in pages.Keys){
-        //         var btn = Instantiate(pageButton, pagePanel.transform);
-        //         pageButtons.Add(btn);
-        //         btn.GetComponentInChildren<Text>().text = e.ToString();
-        //         btn.onClick.AddListener(() => FillPage(e));
-        //     }
-
-        //     if (allSaveInfos.Count == 0) {
-        //         thereIsNothingText.SetActive(true);
-        //     } else {
-        //         thereIsNothingText.SetActive(false);
-        //         FillPage(currentPage);
-        //     }
-        // }
-
-        // public void UpdatePages() {
-        //     allSaveInfos = chController.GetSaveInfos(Application.persistentDataPath);
-        //     var pageCount = Math.Ceiling(Convert.ToSingle(allSaveInfos.Count) / rows * columns);
-        //     pages = new Dictionary<int, List<SaveInfo>>();
-
-        //     for (int i = 1; i <= pageCount; i++) {
-        //         var page = new List<SaveInfo>();
-        //         for (int j = (i - 1) * rows * columns; j < (i - 1) * rows * columns + rows * columns; j++) {
-        //             try {
-        //                 page.Add(allSaveInfos[j]);
-        //             } catch {
-        //                 break;
-        //             }
-        //         }
-        //         pages.Add(i, page);
-        //     }
-        // }
-
-        // public void FillPage(int page) {
-        //     currentPage = page;
-        //     UpdatePages();
-        //     foreach (Transform item in content.transform) {
-        //         Destroy(item.gameObject);
-        //     }
-
-        //     for (int i = 0; i < pageButtons.Count; i++) {
-        //         pageButtons[i].image.color = Color.white;
-        //         if (i == currentPage - 1) {
-        //             pageButtons[currentPage - 1].image.color = Color.yellow;
-        //         }
-        //     }
-
-        //     foreach (var saveInfo in pages[page]) {
-        //         var loaderObj = Instantiate(loadItem, content.transform);
-        //         loaderObj.transform.localScale = new Vector3(1f, 1f, 1f);
-
-        //         Action loadAction = () => chController.LoadGame(saveInfo.savePath);
-
-        //         Action deleteAction = () => {
-        //             New2(1);
-        //             var err = chController.DeleteFile(saveInfo.savePath);
-        //             if (err == ErrorType.DeleteError) {
-        //                 Debug.LogError(err);
-        //                 return;
-        //             }
-
-        //             Destroy(loaderObj);
-
-        //             if (content.transform.childCount == 1 && currentPage != 1) {
-        //                 currentPage -= 1;
-        //                 FillPanel(currentPage);
-        //             }
-        //             FillPanel(currentPage);
-        //         };
-
-        //         if (loaderObj.GetComponent<FillLoadElement>() == null) {
-        //             Debug.LogError("no component FillLoadElement");
-        //         } else {
-        //             loaderObj.GetComponent<FillLoadElement>().Fill(
-        //                 saveInfo,
-        //                 loadAction,
-        //                 deleteAction
-        //             );
-        //         }
-        //     }
-        // }
-
-        public void New2(int page) {
+            content.GetComponent<GridLayoutGroup>().cellSize = newCellSize;
             currentPage = page;
+            next.gameObject.SetActive(false);
+            previous.gameObject.SetActive(false);
+            last.gameObject.SetActive(false);
+            first.gameObject.SetActive(false);
 
             foreach (Transform item in content.transform) {
                 Destroy(item.gameObject);
             }
 
-            var count = rows * columns;
-            var start = (page - 1) * count;
+            foreach (Transform item in pagePanel.transform) {
+                Destroy(item.gameObject);
+            }
 
             var allSaveInfos = chController.GetSaveInfos(Application.persistentDataPath);
+
+            thereIsNothingText.SetActive(false);
+            if (allSaveInfos.Count == 0) {
+                thereIsNothingText.SetActive(true);
+            }
             var saveInfosOnPage = new List<SaveInfo>();
 
+            var count = rows * columns;
+            var start = (page - 1) * count;
             for (int i = start; i < start + count; i++) {
-
                 if (i >= allSaveInfos.Count) break;
                 saveInfosOnPage.Add(allSaveInfos[i]);
             }
@@ -188,11 +108,48 @@ namespace ui {
             pageButtons = new List<Button>();
             var pageCount = Math.Ceiling(Convert.ToSingle(allSaveInfos.Count) / count);
 
-            for (int i = 0; i < pageCount; i++) {
+            if (currentPage != pageCount && pageCount > 0) {
+                next.gameObject.SetActive(true);
+                last.gameObject.SetActive(true);
+
+                next.onClick.RemoveAllListeners();
+                next.onClick.AddListener(() => FillPanel(page + 1));
+
+                last.onClick.RemoveAllListeners();
+                last.onClick.AddListener(() => FillPanel((int)pageCount));
+            }
+
+            if (currentPage != 1) {
+                previous.gameObject.SetActive(true);
+                first.gameObject.SetActive(true);
+
+                previous.onClick.RemoveAllListeners();
+                previous.onClick.AddListener(() => FillPanel(page - 1));
+
+                first.onClick.RemoveAllListeners();
+                first.onClick.AddListener(() => FillPanel(1));
+            }
+
+            var str = 1;
+            if (currentPage != 1 && currentPage >= pageCountOnPanel) {
+                str = currentPage - 1;
+                if (currentPage <= pageCount && currentPage > pageCount - pageCountOnPanel + 1) {
+                    str = (int)pageCount - pageCountOnPanel + 1;
+                }
+            }
+
+            for (int i = str; i < str + pageCountOnPanel; i++) {
+                if (i > pageCount) break;
+                int j = i;
+
                 var btn = Instantiate(pageButton, pagePanel.transform);
+                btn.image.color = Color.white;
+                if (j == currentPage) {
+                    btn.image.color = Color.yellow;
+                }
+                btn.GetComponentInChildren<Text>().text = (j).ToString();
+                btn.onClick.AddListener(() => FillPanel(j));
                 pageButtons.Add(btn);
-                btn.GetComponentInChildren<Text>().text = (i + 1).ToString();
-                btn.onClick.AddListener(() => New2(i + 1));
             }
 
             foreach (var saveInfo in saveInfosOnPage) {
@@ -212,19 +169,18 @@ namespace ui {
 
                     if (content.transform.childCount == 1 && currentPage != 1) {
                         currentPage -= 1;
-                        New2(currentPage);
+                        FillPanel(currentPage);
                     }
-                    New2(currentPage);
+                    FillPanel(currentPage);
                 };
 
                 if (loaderObj.GetComponent<FillLoadElement>() == null) {
                     Debug.LogError("no component FillLoadElement");
                 } else {
-                    loaderObj.GetComponent<FillLoadElement>().Fill(
-                        saveInfo,
-                        loadAction,
-                        deleteAction
-                    );
+                    var loadElem = loaderObj.GetComponent<FillLoadElement>();
+                    loadElem.buttns.loadBtn.onClick.AddListener(new UnityAction(loadAction));
+                    loadElem.buttns.deleteBtn.onClick.AddListener(new UnityAction(deleteAction));
+                    loadElem.Fill(saveInfo);
                 }
             }
         }
