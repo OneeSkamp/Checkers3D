@@ -156,7 +156,7 @@ namespace ui {
                 var loaderObj = Instantiate(loadItem, content.transform);
                 loaderObj.transform.localScale = new Vector3(1f, 1f, 1f);
 
-                Action loadAction = () => chController.LoadGame(saveInfo.savePath);
+                Action loadAction = () => chController.LoadGame(saveInfo.text);
 
                 Action deleteAction = () => {
                     var err = chController.DeleteFile(saveInfo.savePath);

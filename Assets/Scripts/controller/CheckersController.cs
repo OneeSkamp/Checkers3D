@@ -54,6 +54,7 @@ namespace controller {
         public DateTime date;
         public string savePath;
         public BoardInfo boardInfo;
+        public string text;
     }
 
     public struct Map {
@@ -447,18 +448,29 @@ namespace controller {
             return new Vector2Int(Mathf.Abs((int)intermediate.z), Mathf.Abs((int)intermediate.x));
         }
 
-        public BoardInfo BoardInfoFromCSV(string path) {
-            if (path == null) {
+        public string GetTextFromCSV(string path) {
+            try {
+                return File.ReadAllText(path);
+            } catch (Exception e) {
+                Debug.LogError(e);
+                return null;
+            }
+        }
+
+        public List<List<string>> GetRowsFromCSV(string text) {
+            if (text == null) {
                 Debug.LogError("Path is null");
             }
 
-            var rows = new List<List<string>>();
             try {
-                var str = File.ReadAllText(path);
-                rows = CSV.Parse(str).rows;
+                return CSV.Parse(text).rows;
             } catch (Exception e) {
                 Debug.LogError(e);
+                return null;
             }
+        }
+
+        public BoardInfo BoardInfoFromCSV(List<List<string>> rows) {
 
             var size = new Vector2Int(map.board.GetLength(0), map.board.GetLength(1));
             var boardInfo = new BoardInfo();
@@ -535,10 +547,12 @@ namespace controller {
             var saveInfos = new List<SaveInfo>();
             foreach (string filename in allfiles) {
                 var saveInfo = new SaveInfo();
-                var boardInfo = BoardInfoFromCSV(filename);
+                var text = GetTextFromCSV(filename);
+                var rows = GetRowsFromCSV(text);
+                var boardInfo = BoardInfoFromCSV(rows);
                 saveInfo.boardInfo.board = boardInfo.board;
                 saveInfo.boardInfo.moveColor = boardInfo.moveColor;
-                saveInfo.boardInfo.type = gameType;
+                saveInfo.boardInfo.type = boardInfo.type;
 
                 var date = new DateTime();
                 try {
@@ -549,6 +563,7 @@ namespace controller {
 
                 saveInfo.date = date;
                 saveInfo.savePath = filename;
+                saveInfo.text = GetTextFromCSV(filename);
                 saveInfos.Add(saveInfo);
             }
 
@@ -616,9 +631,10 @@ namespace controller {
             }
         }
 
-        public void LoadGame(string path) {
+        public void LoadGame(string text) {
             selHighlight.SetActive(false);
-            var boardInfo = BoardInfoFromCSV(path);
+            var rows = GetRowsFromCSV(text);
+            var boardInfo = BoardInfoFromCSV(rows);
             map.board = boardInfo.board;
             moveClr = boardInfo.moveColor;
             gameType = boardInfo.type;

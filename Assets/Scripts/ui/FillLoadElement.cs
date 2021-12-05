@@ -1,7 +1,6 @@
 using System;
 using UnityEngine;
 using UnityEngine.UI;
-using UnityEngine.Events;
 using controller;
 
 namespace ui {
@@ -21,7 +20,7 @@ namespace ui {
     }
 
     [Serializable]
-    public struct Buttns {
+    public struct Buttons {
         public Button loadBtn;
         public Button deleteBtn;
     }
@@ -29,7 +28,7 @@ namespace ui {
     public class FillLoadElement : MonoBehaviour {
         public Texts texts;
         public Images images;
-        public Buttns buttns;
+        public Buttons buttns;
 
         private void Awake() {
             if (texts.date == null) {
