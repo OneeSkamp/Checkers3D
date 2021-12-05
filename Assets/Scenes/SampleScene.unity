@@ -331,8 +331,6 @@ MonoBehaviour:
   blackLady: {fileID: 6562868862257781079, guid: 658c7957bfe6ca048bc295310fa42b27, type: 3}
   moveHighlight: {fileID: 3011315072822383537, guid: d6d3f9a3d7fa1a940acc3fe863ab07fb, type: 3}
   selectedHighlight: {fileID: 3416308811518889918, guid: ede7a2832d9f97742a70f3c06927f737, type: 3}
-  newEnglishGame: {fileID: 4900000, guid: 456400f04642fc146b3578a25975fee2, type: 3}
-  newRussianGame: {fileID: 4900000, guid: b1e8e2064b03db9428a0c4655312aafc, type: 3}
 --- !u!1 &182627438
 GameObject:
   m_ObjectHideFlags: 0
@@ -2544,7 +2542,7 @@ MonoBehaviour:
   first: {fileID: 2131955499}
   loadPanel: {fileID: 1355994996}
   rows: 2
-  columns: 2
+  columns: 1
   pageCountOnPanel: 4
 --- !u!114 &1355994999
 MonoBehaviour:
