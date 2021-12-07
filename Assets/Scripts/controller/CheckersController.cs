@@ -23,7 +23,8 @@ namespace controller {
 
     public enum GameType {
         Russian,
-        English
+        English,
+        International
     }
 
     public struct Checker {
@@ -65,6 +66,7 @@ namespace controller {
     public class CheckersController : MonoBehaviour {
         public Resources resources;
         public GameObject checkers;
+        public GameObject checkers10x10;
 
         public UnityEvent savedSuccessfully;
         public UnityEvent loadGame;
@@ -90,7 +92,7 @@ namespace controller {
                 return;
             }
 
-            if (resources.boardTransform == null) {
+            if (resources.board8x8Transform == null) {
                 Debug.LogError("Board transform isn't provided");
                 this.enabled = false;
                 return;
@@ -137,15 +139,16 @@ namespace controller {
             dirs.Add(new Vector2Int(-1, 1));
             dirs.Add(new Vector2Int(-1, -1));
 
-            map.figures = new GameObject[8, 8];
-            map.board = new Option<Checker>[8, 8];
+            map.figures = new GameObject[10, 10];
+            map.board = new Option<Checker>[10, 10];
 
             highlightsObj = new GameObject();
             highlightsObj.name = "Highlights";
-            highlightsObj.transform.SetParent(resources.boardTransform);
+            highlightsObj.transform.SetParent(resources.board8x8Transform);
+
             highlightsObj.transform.localRotation = Quaternion.Euler(0f, 0f, 0f);
 
-            selHighlight = Instantiate(resources.selectedHighlight,resources.boardTransform);
+            selHighlight = Instantiate(resources.selectedHighlight, resources.board8x8Transform);
             selHighlight.SetActive(false);
         }
 
@@ -203,6 +206,12 @@ namespace controller {
 
             if (selected.IsSome() && highlightsObj.transform.childCount == 0) {
                 var moveCells = possibleMoves[selected.Peel()];
+
+                highlightsObj.transform.SetParent(resources.board8x8Transform);
+                if (gameType == GameType.International) {
+                    highlightsObj.transform.SetParent(resources.board10x10Transform);
+                }
+
                 foreach (var moveCell in moveCells) {
                     if (needAttack && !moveCell.isAttack) continue;
                     var highlight = Instantiate(resources.moveHighlight, highlightsObj.transform);
@@ -221,6 +230,9 @@ namespace controller {
             }
 
             var clicked = ToCell(hit.point, resources.leftTop.position);
+            if (gameType == GameType.International) {
+                clicked = ToCell(hit.point, resources.leftTop10x10.position);
+            }
 
             foreach (Transform item in highlightsObj.transform) {
                 Destroy(item.gameObject);
@@ -241,6 +253,11 @@ namespace controller {
                 if (!possibleMoves.ContainsKey(clicked)) return;
 
                 selected = Option<Vector2Int>.Some(clicked);
+
+                selHighlight.transform.SetParent(resources.board8x8Transform);
+                if (gameType == GameType.International) {
+                    selHighlight.transform.SetParent(checkers10x10.transform);
+                }
 
                 selHighlight.SetActive(true);
                 selHighlight.transform.localPosition = ToCenterCell(selected.Peel());
@@ -292,7 +309,10 @@ namespace controller {
                         map.board[clicked.x, clicked.y] = lady;
 
                         Destroy(map.figures[clicked.x, clicked.y]);
-                        var ladyObj = Instantiate(obj, resources.boardTransform);
+                        var ladyObj = Instantiate(obj, checkers.transform);
+                        if (gameType == GameType.International) {
+                            ladyObj.transform.SetParent(checkers10x10.transform);
+                        }
 
                         var pos = map.figures[clicked.x, clicked.y].transform.localPosition;
                         ladyObj.transform.localPosition = pos;
@@ -392,22 +412,6 @@ namespace controller {
             }
         }
 
-        private void FillBoard(Option<Checker>[,] board) {
-            for (int i = 0; i < board.GetLength(0); i++) {
-                for (int j = 0; j < board.GetLength(1); j++) {
-                    if (i > 2 && i < 5) continue;
-
-                    if (i % 2 == 0 && j % 2 != 0 || i % 2 != 0 && j % 2 == 0) {
-                        var color = ChColor.Black;
-                        if (i >= 5) {
-                            color = ChColor.White;
-                        }
-                        map.board[i, j] = Option<Checker>.Some(Checker.Mk(color, ChType.Basic));
-                    }
-                }
-            }
-        }
-
         public void FillCheckers(Option<Checker>[,] board) {
             for (int i = 0; i < board.GetLength(0); i++) {
                 for (int j = 0; j < board.GetLength(1); j++) {
@@ -428,7 +432,11 @@ namespace controller {
                         }
                     }
 
-                    var checkerObj = Instantiate(prefab, checkers.transform);
+                    var checkerObj = Instantiate(prefab);
+                    checkerObj.transform.SetParent(checkers.transform);
+                    if (gameType == GameType.International) {
+                        checkerObj.transform.SetParent(checkers10x10.transform);
+                    }
                     checkerObj.transform.localPosition = ToCenterCell(new Vector2Int(i, j));
 
                     map.figures[i, j] = checkerObj;
@@ -439,11 +447,14 @@ namespace controller {
         public Vector3 ToCenterCell(Vector2Int cell) {
             var offset = resources.offset.localPosition;
             var leftTop = resources.leftTop.localPosition;
+            if (gameType == GameType.International) {
+                leftTop = resources.leftTop10x10.localPosition;
+            }
             return new Vector3(-cell.y, 0.56f, cell.x) * 2 + leftTop - offset;
         }
 
         public Vector2Int ToCell(Vector3 globalPoint, Vector3 leftTopPos) {
-            var point = resources.boardTransform.InverseTransformPoint(globalPoint);
+            var point = resources.board8x8Transform.InverseTransformPoint(globalPoint);
             var intermediate = (point - new Vector3(-leftTopPos.x, 0f, leftTopPos.z)) / 2;
             return new Vector2Int(Mathf.Abs((int)intermediate.z), Mathf.Abs((int)intermediate.x));
         }
@@ -472,17 +483,43 @@ namespace controller {
 
         public BoardInfo BoardInfoFromCSV(List<List<string>> rows) {
 
-            var size = new Vector2Int(map.board.GetLength(0), map.board.GetLength(1));
             var boardInfo = new BoardInfo();
-            boardInfo.board = new Option<Checker>[size.x, size.y];
 
             var x = 0;
             foreach (var row in rows) {
 
                 var y = 0;
                 foreach (var cell in row) {
+                    if (x == 0 && y == 0) {
+                        switch (cell) {
+                            case "0":
+                                boardInfo.type = GameType.Russian;
+                                boardInfo.board = new Option<Checker>[8, 8];
+                                break;
+                            case "1":
+                                boardInfo.type = GameType.English;
+                                boardInfo.board = new Option<Checker>[8, 8];
+                                break;
+                            case "2":
+                                boardInfo.type = GameType.International;
+                                boardInfo.board = new Option<Checker>[10, 10];
+                                break;
+                        }
+                        break;
+                    }
+
+                    if (x == 1 && y == 0) {
+                        if (cell == "1") {
+                            boardInfo.moveColor = ChColor.Black;
+                        } else {
+                            boardInfo.moveColor = ChColor.White;
+                        }
+                        x++;
+                        break;
+                    }
+
                     if (cell == "") {
-                        boardInfo.board[x, y] = Option<Checker>.None();
+                        boardInfo.board[x - 3, y] = Option<Checker>.None();
                         y++;
                         continue;
                     }
@@ -499,28 +536,7 @@ namespace controller {
                         chType = ChType.Lady;
                     }
 
-                    if (x == size.x) {
-                        if (value == 1) {
-                            boardInfo.moveColor = ChColor.Black;
-                        } else {
-                            boardInfo.moveColor = ChColor.White;
-                        }
-
-                        continue;
-                    }
-
-                    if (x == size.x + 1) {
-                        if (value == 0) {
-                            boardInfo.type = GameType.Russian;
-                        }
-
-                        if (value == 1) {
-                            boardInfo.type = GameType.English;
-                        }
-
-                        break;
-                    }
-                    boardInfo.board[x, y] = Option<Checker>.Some(Checker.Mk(color, chType));
+                    boardInfo.board[x - 3, y] = Option<Checker>.Some(Checker.Mk(color, chType));
                     y++;
                 }
                 x++;
@@ -581,6 +597,25 @@ namespace controller {
             var filePath = Path.Combine(Application.persistentDataPath, name);
 
             var cells = new List<List<string>>();
+
+            switch (gameType) {
+                case GameType.Russian:
+                    cells.Add(new List<string> {"0"});
+                    break;
+                case GameType.English:
+                    cells.Add(new List<string> {"1"});
+                    break;
+                case GameType.International:
+                    cells.Add(new List<string> {"2"});
+                    break;
+            }
+
+            if (moveClr == ChColor.White) {
+                cells.Add(new List<string> {"0"});
+            } else {
+                cells.Add(new List<string> {"1"});
+            }
+
             for (int i = 0; i < map.board.GetLength(0); i++) {
                 var cellsRow = new List<string>();
                 for (int j = 0; j < map.board.GetLength(1); j++) {
@@ -607,19 +642,6 @@ namespace controller {
                 cells.Add(cellsRow);
             }
 
-            if (moveClr == ChColor.White) {
-                cells.Add(new List<string> {"0"});
-            } else {
-                cells.Add(new List<string> {"1"});
-            }
-
-            if (gameType == GameType.Russian) {
-                cells.Add(new List<string> {"0"});
-            }
-
-            if (gameType == GameType.English) {
-                cells.Add(new List<string> {"1"});
-            }
 
             string output = CSV.Generate(cells);
             try {
@@ -632,12 +654,22 @@ namespace controller {
         }
 
         public void LoadGame(string text) {
+            resources.board8x8Transform.gameObject.SetActive(false);
+            resources.board10x10Transform.gameObject.SetActive(false);
+
             selHighlight.SetActive(false);
             var rows = GetRowsFromCSV(text);
             var boardInfo = BoardInfoFromCSV(rows);
             map.board = boardInfo.board;
             moveClr = boardInfo.moveColor;
             gameType = boardInfo.type;
+
+            if (boardInfo.type == GameType.International) {
+                resources.board10x10Transform.gameObject.SetActive(true);
+            } else {
+                resources.board8x8Transform.gameObject.SetActive(true);
+            }
+
             foreach (var obj in map.figures) {
                 Destroy(obj);
             }

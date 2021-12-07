@@ -28,7 +28,7 @@ namespace ui {
     public class FillLoadElement : MonoBehaviour {
         public Texts texts;
         public Images images;
-        public Buttons buttns;
+        public Buttons buttons;
 
         private void Awake() {
             if (texts.date == null) {
@@ -43,13 +43,13 @@ namespace ui {
                 return;
             }
 
-            if (buttns.loadBtn == null) {
+            if (buttons.loadBtn == null) {
                 Debug.LogError("Load button isn't provided");
                 this.enabled = false;
                 return;
             }
 
-            if (buttns.deleteBtn == null) {
+            if (buttons.deleteBtn == null) {
                 Debug.LogError("Delete button isn't provided");
                 this.enabled = false;
                 return;
@@ -74,7 +74,7 @@ namespace ui {
             }
         }
 
-        public void Fill(SaveInfo saveInfo) {
+        public void Fill(SaveInfo saveInfo, float imageSize) {
             if (saveInfo.boardInfo.moveColor == ChColor.Black) {
                 images.moveColor.color = Color.black;
             }
@@ -88,29 +88,48 @@ namespace ui {
                 images.watch.GetComponent<SetHandsClock>().SetHands(saveInfo.date);
             }
 
-            for (int i = 0; i < saveInfo.boardInfo.board.GetLength(0); i++) {
-                for (int j = 0; j < saveInfo.boardInfo.board.GetLength(1); j++) {
-                    if (saveInfo.boardInfo.board[i, j].IsNone()) continue;
+            var imgSize = new Vector2(imageSize / 3, imageSize / 3);
+            var boardSize = new Vector2(imageSize, imageSize);
 
-                    var figure = Instantiate(images.checker, images.boardImage.transform);
+            images.boardImage.GetComponent<RectTransform>().sizeDelta = boardSize;
+            images.moveColor.GetComponent<RectTransform>().sizeDelta = imgSize;
+            images.watch.GetComponent<RectTransform>().sizeDelta = imgSize;
+            buttons.deleteBtn.GetComponent<RectTransform>().sizeDelta = imgSize;
+            buttons.loadBtn.GetComponent<RectTransform>().sizeDelta = imgSize;
+
+            var maxY = 1f - 0.125f / 2;
+            for (int i = 0; i < saveInfo.boardInfo.board.GetLength(0); i++) {
+                var maxX = 0f + 0.125f / 2;
+                for (int j = 0; j < saveInfo.boardInfo.board.GetLength(1); j++) {
+                    if (saveInfo.boardInfo.board[i, j].IsNone()) {
+                        maxX += 0.125f;
+                        continue;
+                    }
+
+                    var fig = Instantiate(images.checker, images.boardImage.transform);
 
                     var ch = saveInfo.boardInfo.board[i, j].Peel();
                     if (ch.type == ChType.Lady) {
-                        figure.sprite = images.ladyLabel ;
+                        fig.sprite = images.ladyLabel ;
                     }
 
                     if (ch.color == ChColor.White) {
-                        figure.color = Color.white;
+                        fig.color = Color.white;
                     }
 
-                    var rect = images.boardImage.GetComponent<RectTransform>().rect;
+                    var figRect = fig.GetComponent<RectTransform>();
+                    var boardRect = images.boardImage.GetComponent<RectTransform>();
 
-                    var cell = new Vector2Int(i, j);
-                    var x = -rect.height + (rect.height/8 * cell.y + rect.height/16);
-                    var y = rect.width - (rect.width/8 * cell.x + rect.width/16);
-                    figure.transform.localPosition = new Vector3(x, y, 0f);
+                    figRect.anchorMax = new Vector2(maxX, maxY);
+                    figRect.anchorMin = new Vector2(maxX, maxY);
+                    figRect.sizeDelta = boardRect.sizeDelta / 8;
+                    fig.GetComponent<RectTransform>().anchoredPosition = new Vector3(0f, 0f, 0f);
+
+                    maxX += 0.125f;
                 }
+                maxY -= 0.125f;
             }
+
         }
     }
 }

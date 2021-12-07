@@ -13,10 +13,10 @@ namespace ui {
         public CheckersController chController;
         public GameObject pagePanel;
         public Button pageButton;
-        public Button next;
-        public Button previous;
-        public Button last;
-        public Button first;
+        public Button nextButton;
+        public Button previousButton;
+        public Button lastButton;
+        public Button firstButton;
 
         public GameObject loadPanel;
         public int rows;
@@ -76,11 +76,8 @@ namespace ui {
             var newCellSize = new Vector2(newWidth, newHeight);
 
             content.GetComponent<GridLayoutGroup>().cellSize = newCellSize;
+
             currentPage = page;
-            next.gameObject.SetActive(false);
-            previous.gameObject.SetActive(false);
-            last.gameObject.SetActive(false);
-            first.gameObject.SetActive(false);
 
             foreach (Transform item in content.transform) {
                 Destroy(item.gameObject);
@@ -108,27 +105,6 @@ namespace ui {
             pageButtons = new List<Button>();
             var pageCount = Math.Ceiling(Convert.ToSingle(allSaveInfos.Count) / count);
 
-            if (currentPage != pageCount && pageCount > 0) {
-                next.gameObject.SetActive(true);
-                last.gameObject.SetActive(true);
-
-                next.onClick.RemoveAllListeners();
-                next.onClick.AddListener(() => FillPanel(page + 1));
-
-                last.onClick.RemoveAllListeners();
-                last.onClick.AddListener(() => FillPanel((int)pageCount));
-            }
-
-            if (currentPage != 1) {
-                previous.gameObject.SetActive(true);
-                first.gameObject.SetActive(true);
-
-                previous.onClick.RemoveAllListeners();
-                previous.onClick.AddListener(() => FillPanel(page - 1));
-
-                first.onClick.RemoveAllListeners();
-                first.onClick.AddListener(() => FillPanel(1));
-            }
 
             var str = 1;
             if (currentPage != 1 && currentPage >= pageCountOnPanel) {
@@ -137,6 +113,9 @@ namespace ui {
                     str = (int)pageCount - pageCountOnPanel + 1;
                 }
             }
+
+            var first = Instantiate(firstButton, pagePanel.transform);
+            var previous = Instantiate(previousButton, pagePanel.transform);
 
             for (int i = str; i < str + pageCountOnPanel; i++) {
                 if (i > pageCount) break;
@@ -150,6 +129,25 @@ namespace ui {
                 btn.GetComponentInChildren<Text>().text = (j).ToString();
                 btn.onClick.AddListener(() => FillPanel(j));
                 pageButtons.Add(btn);
+            }
+
+            var next = Instantiate(nextButton, pagePanel.transform);
+            var last = Instantiate(lastButton, pagePanel.transform);
+
+            if (currentPage != pageCount && pageCount > 0) {
+                next.interactable = true;
+                last.interactable = true;
+
+                next.onClick.AddListener(() => FillPanel(page + 1));
+                last.onClick.AddListener(() => FillPanel((int)pageCount));
+            }
+
+            if (currentPage != 1) {
+                previous.interactable = true;
+                first.interactable = true;
+
+                previous.onClick.AddListener(() => FillPanel(page - 1));
+                first.onClick.AddListener(() => FillPanel(1));
             }
 
             foreach (var saveInfo in saveInfosOnPage) {
@@ -178,9 +176,14 @@ namespace ui {
                     Debug.LogError("no component FillLoadElement");
                 } else {
                     var loadElem = loaderObj.GetComponent<FillLoadElement>();
-                    loadElem.buttns.loadBtn.onClick.AddListener(new UnityAction(loadAction));
-                    loadElem.buttns.deleteBtn.onClick.AddListener(new UnityAction(deleteAction));
-                    loadElem.Fill(saveInfo);
+                    loadElem.buttons.loadBtn.onClick.AddListener(new UnityAction(loadAction));
+                    loadElem.buttons.deleteBtn.onClick.AddListener(new UnityAction(deleteAction));
+                    var scale = 2.5f;
+                    if (rows > columns) {
+                        scale = 1.5f;
+                    }
+                    var imageSize = Math.Min(newWidth, newHeight) / scale;
+                    loadElem.Fill(saveInfo, imageSize);
                 }
             }
         }
