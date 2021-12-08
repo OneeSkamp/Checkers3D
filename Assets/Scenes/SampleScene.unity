@@ -411,7 +411,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: e80e7dcd766707c479f58614100321b9, type: 3}
       propertyPath: m_Name
-      value: 10x10
+      value: Chess board 10x10
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: e80e7dcd766707c479f58614100321b9, type: 3}
       propertyPath: m_IsActive
@@ -1920,7 +1920,7 @@ GameObject:
   - component: {fileID: 849282002}
   - component: {fileID: 849282003}
   m_Layer: 0
-  m_Name: GameObject
+  m_Name: Pages panel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -4396,7 +4396,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8088598711154795148, guid: 04e70081efa69224da10e5267f8a0907, type: 3}
       propertyPath: m_Name
-      value: Chess board
+      value: Chess board 8x8
       objectReference: {fileID: 0}
     - target: {fileID: 8088598711154795148, guid: 04e70081efa69224da10e5267f8a0907, type: 3}
       propertyPath: m_IsActive
