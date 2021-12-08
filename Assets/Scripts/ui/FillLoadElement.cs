@@ -15,6 +15,7 @@ namespace ui {
         public Image moveColor;
         public GameObject watch;
         public Image boardImage;
+        public Sprite board10x10Sprite;
         public Image checker;
         public Sprite ladyLabel;
     }
@@ -98,6 +99,10 @@ namespace ui {
             buttons.loadBtn.GetComponent<RectTransform>().sizeDelta = imgSize;
 
             var countCells = saveInfo.boardInfo.board.GetLength(0);
+            if (countCells == 10) {
+                images.boardImage.sprite = images.board10x10Sprite;
+            }
+
             var maxY = 1f - 1f / countCells / 2;
             for (int i = 0; i < saveInfo.boardInfo.board.GetLength(0); i++) {
                 var maxX = 0f + 1f / countCells / 2;

@@ -540,6 +540,7 @@ MonoBehaviour:
     moveColor: {fileID: 7838690833513563594}
     watch: {fileID: 8106787605189266527}
     boardImage: {fileID: 3237138860883740533}
+    board10x10Sprite: {fileID: 21300000, guid: fe048eb897b001b4090150e2202f0260, type: 3}
     checker: {fileID: 3414144547746841257, guid: 1677e1371a5f60c4784afacd66d93067, type: 3}
     ladyLabel: {fileID: 21300000, guid: 16ded371451a6114caa0df4e36405936, type: 3}
   buttons:
