@@ -97,12 +97,13 @@ namespace ui {
             buttons.deleteBtn.GetComponent<RectTransform>().sizeDelta = imgSize;
             buttons.loadBtn.GetComponent<RectTransform>().sizeDelta = imgSize;
 
-            var maxY = 1f - 0.125f / 2;
+            var countCells = saveInfo.boardInfo.board.GetLength(0);
+            var maxY = 1f - 1f / countCells / 2;
             for (int i = 0; i < saveInfo.boardInfo.board.GetLength(0); i++) {
-                var maxX = 0f + 0.125f / 2;
+                var maxX = 0f + 1f / countCells / 2;
                 for (int j = 0; j < saveInfo.boardInfo.board.GetLength(1); j++) {
                     if (saveInfo.boardInfo.board[i, j].IsNone()) {
-                        maxX += 0.125f;
+                        maxX += 1f / countCells;
                         continue;
                     }
 
@@ -125,12 +126,12 @@ namespace ui {
 
                     figRect.anchorMax = new Vector2(maxX, maxY);
                     figRect.anchorMin = new Vector2(maxX, maxY);
-                    figRect.sizeDelta = boardRect.sizeDelta / 8;
+                    figRect.sizeDelta = boardRect.sizeDelta / countCells;
                     fig.GetComponent<RectTransform>().anchoredPosition = new Vector3(0f, 0f, 0f);
 
-                    maxX += 0.125f;
+                    maxX += 1f / countCells;
                 }
-                maxY -= 0.125f;
+                maxY -= 1f / countCells;
             }
 
         }
