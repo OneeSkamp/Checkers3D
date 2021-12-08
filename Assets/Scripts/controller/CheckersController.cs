@@ -524,15 +524,19 @@ namespace controller {
                         continue;
                     }
 
-                    var value = Int32.Parse(cell);
+                    var value = Int32.TryParse(cell, out int res);
+                    if (!value) {
+                        Debug.LogError("Parse error");
+                        break;
+                    }
 
                     var color = ChColor.Black;
-                    if (value % 2 == 0) {
+                    if (res % 2 == 0) {
                         color = ChColor.White;
                     }
 
                     var chType = ChType.Basic;
-                    if (value > 1) {
+                    if (res > 1) {
                         chType = ChType.Lady;
                     }
 
