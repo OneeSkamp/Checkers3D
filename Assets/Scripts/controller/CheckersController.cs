@@ -646,7 +646,6 @@ namespace controller {
                 cells.Add(cellsRow);
             }
 
-
             string output = CSV.Generate(cells);
             try {
                 File.WriteAllText(filePath, output);

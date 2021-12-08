@@ -89,6 +89,7 @@ namespace ui {
             if (allSaveInfos.Count == 0) {
                 thereIsNothingText.SetActive(true);
             }
+
             var saveInfosOnPage = new List<SaveInfo>();
 
             var count = rows * columns;
