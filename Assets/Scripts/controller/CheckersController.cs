@@ -299,6 +299,12 @@ namespace controller {
 
                     chObj.transform.localPosition = ToCenterCell(clicked);
 
+                    if (resources.whiteLady == null) {
+                        Debug.LogError("White lady isn't provided");
+                        this.enabled = false;
+                        return;
+                    }
+
                     if (clicked.x == edge) {
                         var obj = resources.blackLady;
                         if (moveClr == ChColor.White) {

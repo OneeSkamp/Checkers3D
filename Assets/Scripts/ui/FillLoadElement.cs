@@ -131,7 +131,7 @@ namespace ui {
 
                     figRect.anchorMax = new Vector2(maxX, maxY);
                     figRect.anchorMin = new Vector2(maxX, maxY);
-                    figRect.sizeDelta = boardRect.sizeDelta / countCells;
+                    figRect.sizeDelta = boardRect.sizeDelta / countCells / 1.3f;
                     fig.GetComponent<RectTransform>().anchoredPosition = new Vector3(0f, 0f, 0f);
 
                     maxX += 1f / countCells;

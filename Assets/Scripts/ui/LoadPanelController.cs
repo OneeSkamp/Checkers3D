@@ -6,17 +6,22 @@ using controller;
 using UnityEngine.Events;
 
 namespace ui {
+    [Serializable]
+    public struct PageArrows {
+        public Button next;
+        public Button previous;
+        public Button last;
+        public Button first;
+    }
+
     public class LoadPanelController : MonoBehaviour {
         public GameObject content;
         public GameObject loadItem;
         public GameObject thereIsNothingText;
         public CheckersController chController;
         public GameObject pagePanel;
+        public PageArrows pageArrows;
         public Button pageButton;
-        public Button nextButton;
-        public Button previousButton;
-        public Button lastButton;
-        public Button firstButton;
 
         public GameObject loadPanel;
         public int rows;
@@ -110,8 +115,8 @@ namespace ui {
                 }
             }
 
-            var first = Instantiate(firstButton, pagePanel.transform);
-            var previous = Instantiate(previousButton, pagePanel.transform);
+            var first = Instantiate(pageArrows.first, pagePanel.transform);
+            var previous = Instantiate(pageArrows.previous, pagePanel.transform);
 
             for (int i = startPage; i < startPage + pageCountOnPanel; i++) {
                 if (i > pageCount) break;
@@ -127,8 +132,8 @@ namespace ui {
                 pageButtons.Add(btn);
             }
 
-            var next = Instantiate(nextButton, pagePanel.transform);
-            var last = Instantiate(lastButton, pagePanel.transform);
+            var next = Instantiate(pageArrows.next, pagePanel.transform);
+            var last = Instantiate(pageArrows.last, pagePanel.transform);
 
             if (page != pageCount && pageCount > 0) {
                 next.interactable = true;
