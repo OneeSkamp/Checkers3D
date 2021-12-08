@@ -110,7 +110,10 @@ namespace ui {
 
                     var ch = saveInfo.boardInfo.board[i, j].Peel();
                     if (ch.type == ChType.Lady) {
-                        fig.sprite = images.ladyLabel ;
+                        fig.sprite = images.ladyLabel;
+                        if (ch.color == ChColor.Black) {
+                            fig.color = Color.red;
+                        }
                     }
 
                     if (ch.color == ChColor.White) {
