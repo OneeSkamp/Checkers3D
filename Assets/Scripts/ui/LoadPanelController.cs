@@ -24,10 +24,8 @@ namespace ui {
         public int pageCountOnPanel;
 
         private List<Button> pageButtons;
-        private int currentPage;
 
         private void Awake() {
-            currentPage = 1;
             if (content == null) {
                 Debug.LogError("This component requires content");
                 this.enabled = false;
@@ -77,8 +75,6 @@ namespace ui {
 
             content.GetComponent<GridLayoutGroup>().cellSize = newCellSize;
 
-            currentPage = page;
-
             foreach (Transform item in content.transform) {
                 Destroy(item.gameObject);
             }
@@ -107,9 +103,9 @@ namespace ui {
 
 
             var str = 1;
-            if (currentPage != 1 && currentPage >= pageCountOnPanel) {
-                str = currentPage - 1;
-                if (currentPage <= pageCount && currentPage > pageCount - pageCountOnPanel + 1) {
+            if (page != 1 && page >= pageCountOnPanel) {
+                str = page - 1;
+                if (page <= pageCount && page > pageCount - pageCountOnPanel + 1) {
                     str = (int)pageCount - pageCountOnPanel + 1;
                 }
             }
@@ -123,7 +119,7 @@ namespace ui {
 
                 var btn = Instantiate(pageButton, pagePanel.transform);
                 btn.image.color = Color.white;
-                if (j == currentPage) {
+                if (j == page) {
                     btn.image.color = Color.yellow;
                 }
                 btn.GetComponentInChildren<Text>().text = (j).ToString();
@@ -134,7 +130,7 @@ namespace ui {
             var next = Instantiate(nextButton, pagePanel.transform);
             var last = Instantiate(lastButton, pagePanel.transform);
 
-            if (currentPage != pageCount && pageCount > 0) {
+            if (page != pageCount && pageCount > 0) {
                 next.interactable = true;
                 last.interactable = true;
 
@@ -142,7 +138,7 @@ namespace ui {
                 last.onClick.AddListener(() => FillPanel((int)pageCount));
             }
 
-            if (currentPage != 1) {
+            if (page != 1) {
                 previous.interactable = true;
                 first.interactable = true;
 
@@ -165,11 +161,11 @@ namespace ui {
 
                     Destroy(loaderObj);
 
-                    if (content.transform.childCount == 1 && currentPage != 1) {
-                        currentPage -= 1;
-                        FillPanel(currentPage);
+                    if (content.transform.childCount == 1 && page != 1) {
+                        page -= 1;
+                        FillPanel(page);
                     }
-                    FillPanel(currentPage);
+                    FillPanel(page);
                 };
 
                 if (loaderObj.GetComponent<FillLoadElement>() == null) {
@@ -178,6 +174,7 @@ namespace ui {
                     var loadElem = loaderObj.GetComponent<FillLoadElement>();
                     loadElem.buttons.loadBtn.onClick.AddListener(new UnityAction(loadAction));
                     loadElem.buttons.deleteBtn.onClick.AddListener(new UnityAction(deleteAction));
+
                     var scale = 2.5f;
                     if (rows > columns) {
                         scale = 1.5f;
