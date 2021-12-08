@@ -102,19 +102,18 @@ namespace ui {
             pageButtons = new List<Button>();
             var pageCount = Math.Ceiling(Convert.ToSingle(allSaveInfos.Count) / count);
 
-
-            var str = 1;
+            var startPage = 1;
             if (page != 1 && page >= pageCountOnPanel) {
-                str = page - 1;
+                startPage = page - 1;
                 if (page <= pageCount && page > pageCount - pageCountOnPanel + 1) {
-                    str = (int)pageCount - pageCountOnPanel + 1;
+                    startPage = (int)pageCount - pageCountOnPanel + 1;
                 }
             }
 
             var first = Instantiate(firstButton, pagePanel.transform);
             var previous = Instantiate(previousButton, pagePanel.transform);
 
-            for (int i = str; i < str + pageCountOnPanel; i++) {
+            for (int i = startPage; i < startPage + pageCountOnPanel; i++) {
                 if (i > pageCount) break;
                 int j = i;
 
