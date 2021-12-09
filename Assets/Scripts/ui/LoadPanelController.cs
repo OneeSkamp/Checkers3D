@@ -28,84 +28,63 @@ namespace ui {
         public int columns;
         public int pageCountOnPanel;
 
-        private List<Button> pageButtons;
-
-        private void Awake() {
-            if (content == null) {
-                Debug.LogError("This component requires content");
-                this.enabled = false;
-                return;
-            }
-
-            if (loadItem == null) {
-                Debug.LogError("This component requires loadItem");
-                this.enabled = false;
-                return;
-            }
-
-            if (thereIsNothingText == null) {
-                Debug.LogError("This component requires thereIsNothingText");
-                this.enabled = false;
-                return;
-            }
-
-            if (chController == null) {
-                Debug.LogError("This component requires chController");
-                this.enabled = false;
-                return;
-            }
-
-            if (pagePanel == null) {
-                Debug.LogError("This component requires pagePanel");
-                this.enabled = false;
-                return;
-            }
-
-            if (pageButton == null) {
-                Debug.LogError("This component requires pageButton");
-                this.enabled = false;
-                return;
-            }
-        }
+        private List<Button> pageButtons = new List<Button>();
 
         public void FillPanel(int page) {
-            var rect = loadPanel.GetComponent<RectTransform>().rect;
-            var width = rect.width;
-            var height = rect.height;
+            if (content == null) {
+                Debug.LogError("This component requires content");
+                return;
+            }
+            content.GetComponent<GridLayoutGroup>().constraintCount = columns;
 
-            var newWidth = width / columns;
-            var newHeight = height / rows;
-
-            var newCellSize = new Vector2(newWidth, newHeight);
-
-            content.GetComponent<GridLayoutGroup>().cellSize = newCellSize;
+            pageArrows.next.interactable = false;
+            pageArrows.last.interactable = false;
+            pageArrows.first.interactable = false;
+            pageArrows.previous.interactable = false;
 
             foreach (Transform item in content.transform) {
                 Destroy(item.gameObject);
             }
 
-            foreach (Transform item in pagePanel.transform) {
-                Destroy(item.gameObject);
+            if (chController == null) {
+                Debug.LogError("This component requires chController");
+                return;
             }
+            var allSaveInfos = chController.GetSaveInfos();
 
-            var allSaveInfos = chController.GetSaveInfos(Application.persistentDataPath);
-
-            thereIsNothingText.SetActive(false);
-            if (allSaveInfos.Count == 0) {
-                thereIsNothingText.SetActive(true);
+            if (thereIsNothingText == null) {
+                Debug.LogError("This component requires thereIsNothingText");
+                return;
             }
-
-            var saveInfosOnPage = new List<SaveInfo>();
+            thereIsNothingText.SetActive(allSaveInfos.Count == 0);
 
             var count = rows * columns;
-            var start = (page - 1) * count;
-            for (int i = start; i < start + count; i++) {
-                if (i >= allSaveInfos.Count) break;
-                saveInfosOnPage.Add(allSaveInfos[i]);
+            var pageCount = Math.Ceiling(Convert.ToSingle(allSaveInfos.Count) / count);
+
+            if (pagePanel == null) {
+                Debug.LogError("This component requires pagePanel");
+                return;
             }
 
-            pageButtons = new List<Button>();
-            var pageCount = Math.Ceiling(Convert.ToSingle(allSaveInfos.Count) / count);
+            if (pageCountOnPanel != pageButtons.Count) {
+                for (int i = 2; i < pagePanel.transform.childCount - 2; i++) {
+                    Destroy(pagePanel.transform.GetChild(i).gameObject);
+                }
+
+                pageButtons.Clear();
+                for (int i = 0; i < pageCountOnPanel; i++) {
+                    if (i >= pageCount) break;
+
+                    if (pageButton == null) {
+                        Debug.LogError("This component requires pageButton");
+                        return;
+                    }
+
+                    var btn = Instantiate(pageButton, pagePanel.transform);
+                    btn.transform.SetSiblingIndex(i + 2);
+                    pageButtons.Add(btn);
+                }
+            }
 
             var startPage = 1;
             if (page != 1 && page >= pageCountOnPanel) {
@@ -115,50 +94,58 @@ namespace ui {
                 }
             }
 
-            var first = Instantiate(pageArrows.first, pagePanel.transform);
-            var previous = Instantiate(pageArrows.previous, pagePanel.transform);
-
-            for (int i = startPage; i < startPage + pageCountOnPanel; i++) {
-                if (i > pageCount) break;
-                int j = i;
-
-                var btn = Instantiate(pageButton, pagePanel.transform);
+            foreach (var btn in pageButtons) {
+                if (startPage > pageCount) break;
+                var i = startPage;
                 btn.image.color = Color.white;
-                if (j == page) {
+                if (i == page) {
                     btn.image.color = Color.yellow;
                 }
-                btn.GetComponentInChildren<Text>().text = (j).ToString();
-                btn.onClick.AddListener(() => FillPanel(j));
-                pageButtons.Add(btn);
+                btn.GetComponentInChildren<Text>().text = (i).ToString();
+                btn.onClick.RemoveAllListeners();
+                btn.onClick.AddListener(() => FillPanel(i));
+                startPage++;
             }
 
-            var next = Instantiate(pageArrows.next, pagePanel.transform);
-            var last = Instantiate(pageArrows.last, pagePanel.transform);
-
             if (page != pageCount && pageCount > 0) {
-                next.interactable = true;
-                last.interactable = true;
+                pageArrows.next.interactable = true;
+                pageArrows.last.interactable = true;
 
-                next.onClick.AddListener(() => FillPanel(page + 1));
-                last.onClick.AddListener(() => FillPanel((int)pageCount));
+                pageArrows.next.onClick.RemoveAllListeners();
+                pageArrows.next.onClick.AddListener(() => FillPanel(page + 1));
+
+                pageArrows.last.onClick.RemoveAllListeners();
+                pageArrows.last.onClick.AddListener(() => FillPanel((int)pageCount));
             }
 
             if (page != 1) {
-                previous.interactable = true;
-                first.interactable = true;
+                pageArrows.previous.interactable = true;
+                pageArrows.first.interactable = true;
 
-                previous.onClick.AddListener(() => FillPanel(page - 1));
-                first.onClick.AddListener(() => FillPanel(1));
+                pageArrows.previous.onClick.RemoveAllListeners();
+                pageArrows.previous.onClick.AddListener(() => FillPanel(page - 1));
+
+                pageArrows.first.onClick.RemoveAllListeners();
+                pageArrows.first.onClick.AddListener(() => FillPanel(1));
             }
 
-            foreach (var saveInfo in saveInfosOnPage) {
+            var start = (page - 1) * count;
+            for (int i = start; i < start + count; i++) {
+                if (i >= allSaveInfos.Count || allSaveInfos.Count == 0) break;
+
+                if (loadItem == null) {
+                    Debug.LogError("This component requires loadItem");
+                    return;
+                }
+
                 var loaderObj = Instantiate(loadItem, content.transform);
                 loaderObj.transform.localScale = new Vector3(1f, 1f, 1f);
 
-                Action loadAction = () => chController.LoadGame(saveInfo.text);
+                var j = i;
+                Action loadAction = () => chController.LoadGame(allSaveInfos[j].text);
 
                 Action deleteAction = () => {
-                    var err = chController.DeleteFile(saveInfo.savePath);
+                    var err = chController.DeleteFile(allSaveInfos[j].savePath);
                     if (err == ErrorType.DeleteError) {
                         Debug.LogError(err);
                         return;
@@ -168,6 +155,7 @@ namespace ui {
 
                     if (content.transform.childCount == 1 && page != 1) {
                         page -= 1;
+                        pageButtons.Clear();
                         FillPanel(page);
                     }
                     FillPanel(page);
@@ -180,12 +168,7 @@ namespace ui {
                     loadElem.buttons.loadBtn.onClick.AddListener(new UnityAction(loadAction));
                     loadElem.buttons.deleteBtn.onClick.AddListener(new UnityAction(deleteAction));
 
-                    var scale = 2.5f;
-                    if (rows > columns) {
-                        scale = 1.5f;
-                    }
-                    var imageSize = Math.Min(newWidth, newHeight) / scale;
-                    loadElem.Fill(saveInfo, imageSize);
+                    loadElem.Fill(allSaveInfos[i]);
                 }
             }
         }

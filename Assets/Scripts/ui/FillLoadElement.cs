@@ -31,75 +31,39 @@ namespace ui {
         public Images images;
         public Buttons buttons;
 
-        private void Awake() {
-            if (texts.date == null) {
-                Debug.LogError("Date isn't provided");
-                this.enabled = false;
-                return;
-            }
-
+        public void Fill(SaveInfo saveInfo) {
             if (images.moveColor == null) {
                 Debug.LogError("Move color isn't provided");
-                this.enabled = false;
                 return;
             }
-
-            if (buttons.loadBtn == null) {
-                Debug.LogError("Load button isn't provided");
-                this.enabled = false;
-                return;
-            }
-
-            if (buttons.deleteBtn == null) {
-                Debug.LogError("Delete button isn't provided");
-                this.enabled = false;
-                return;
-            }
-
-            if (images.boardImage == null) {
-                Debug.LogError("Image isn't provided");
-                this.enabled = false;
-                return;
-            }
-
-            if (images.checker == null) {
-                Debug.LogError("Checker checker isn't provided");
-                this.enabled = false;
-                return;
-            }
-
-            if (images.ladyLabel  == null) {
-                Debug.LogError("Lady checker isn't provided");
-                this.enabled = false;
-                return;
-            }
-        }
-
-        public void Fill(SaveInfo saveInfo, float imageSize) {
             if (saveInfo.boardInfo.moveColor == ChColor.Black) {
                 images.moveColor.color = Color.black;
             }
 
+            if (texts.date == null) {
+                Debug.LogError("Date isn't provided");
+                return;
+            }
             texts.date.text = saveInfo.date.ToString("dd.MM.yyyy");
+
+            if (texts.gameType == null) {
+                Debug.LogError("GameType text isn't provided");
+                return;
+            }
             texts.gameType.text = saveInfo.boardInfo.type.ToString();
 
             if (images.watch.GetComponent<SetHandsClock>() == null) {
                 Debug.LogError("no component FillImageBoard");
             } else {
                 images.watch.GetComponent<SetHandsClock>().SetHands(saveInfo.date);
-            }
-
-            var imgSize = new Vector2(imageSize / 3, imageSize / 3);
-            var boardSize = new Vector2(imageSize, imageSize);
-
-            images.boardImage.GetComponent<RectTransform>().sizeDelta = boardSize;
-            images.moveColor.GetComponent<RectTransform>().sizeDelta = imgSize;
-            images.watch.GetComponent<RectTransform>().sizeDelta = imgSize;
-            buttons.deleteBtn.GetComponent<RectTransform>().sizeDelta = imgSize;
-            buttons.loadBtn.GetComponent<RectTransform>().sizeDelta = imgSize;
+            };
 
             var countCells = saveInfo.boardInfo.board.GetLength(0);
             if (countCells == 10) {
+                if (images.boardImage == null) {
+                    Debug.LogError("BoardImage isn't provided");
+                    return;
+                }
                 images.boardImage.sprite = images.board10x10Sprite;
             }
 
@@ -112,10 +76,19 @@ namespace ui {
                         continue;
                     }
 
+                    if (images.checker == null) {
+                        Debug.LogError("Checker isn't provided");
+                        return;
+                    }
                     var fig = Instantiate(images.checker, images.boardImage.transform);
 
                     var ch = saveInfo.boardInfo.board[i, j].Peel();
                     if (ch.type == ChType.Lady) {
+                        if (images.ladyLabel  == null) {
+                            Debug.LogError("Lady checker isn't provided");
+                            return;
+                        }
+
                         fig.sprite = images.ladyLabel;
                         if (ch.color == ChColor.Black) {
                             fig.color = Color.red;

@@ -86,6 +86,17 @@ namespace controller {
         private Dictionary<Vector2Int, List<MoveCell>> possibleMoves;
 
         private void Awake() {
+            dirs.Add(new Vector2Int(1, 1));
+            dirs.Add(new Vector2Int(1, -1));
+            dirs.Add(new Vector2Int(-1, 1));
+            dirs.Add(new Vector2Int(-1, -1));
+
+            map.figures = new GameObject[10, 10];
+            map.board = new Option<Checker>[10, 10];
+
+            highlightsObj = new GameObject();
+            highlightsObj.name = "Highlights";
+
             if (resources == null) {
                 Debug.LogError("Resources isn't provided");
                 this.enabled = false;
@@ -97,53 +108,6 @@ namespace controller {
                 this.enabled = false;
                 return;
             }
-
-            if (resources.leftTop == null) {
-                Debug.LogError("Left top isn't provided");
-                this.enabled = false;
-                return;
-            }
-
-            if (resources.whiteChecker == null) {
-                Debug.LogError("White checker isn't provided");
-                this.enabled = false;
-                return;
-            }
-
-            if (resources.blackChecker == null) {
-                Debug.LogError("Black checker isn't provided");
-                this.enabled = false;
-                return;
-            }
-
-            if (resources.whiteLady == null) {
-                Debug.LogError("White lady isn't provided");
-                this.enabled = false;
-                return;
-            }
-
-            if (resources.blackLady == null) {
-                Debug.LogError("Black lady isn't provided");
-                this.enabled = false;
-                return;
-            }
-
-            if (resources.moveHighlight == null) {
-                Debug.LogError("Move highlight isn't provided");
-                this.enabled = false;
-                return;
-            }
-
-            dirs.Add(new Vector2Int(1, 1));
-            dirs.Add(new Vector2Int(1, -1));
-            dirs.Add(new Vector2Int(-1, 1));
-            dirs.Add(new Vector2Int(-1, -1));
-
-            map.figures = new GameObject[10, 10];
-            map.board = new Option<Checker>[10, 10];
-
-            highlightsObj = new GameObject();
-            highlightsObj.name = "Highlights";
             highlightsObj.transform.SetParent(resources.board8x8Transform);
 
             highlightsObj.transform.localRotation = Quaternion.Euler(0f, 0f, 0f);
@@ -214,6 +178,11 @@ namespace controller {
 
                 foreach (var moveCell in moveCells) {
                     if (needAttack && !moveCell.isAttack) continue;
+                    if (resources.moveHighlight == null) {
+                        Debug.LogError("Move highlight isn't provided");
+                        this.enabled = false;
+                        return;
+                    }
                     var highlight = Instantiate(resources.moveHighlight, highlightsObj.transform);
                     highlight.transform.localPosition = ToCenterCell(moveCell.pos);
                 }
@@ -229,6 +198,11 @@ namespace controller {
                 return;
             }
 
+            if (resources.leftTop == null) {
+                Debug.LogError("Left top isn't provided");
+                this.enabled = false;
+                return;
+            }
             var clicked = ToCell(hit.point, resources.leftTop.position);
             if (gameType == GameType.International) {
                 clicked = ToCell(hit.point, resources.leftTop10x10.position);
@@ -306,6 +280,11 @@ namespace controller {
                     }
 
                     if (clicked.x == edge) {
+                        if (resources.blackLady == null) {
+                            Debug.LogError("Black lady isn't provided");
+                            this.enabled = false;
+                            return;
+                        }
                         var obj = resources.blackLady;
                         if (moveClr == ChColor.White) {
                             obj = resources.whiteLady;
@@ -426,12 +405,23 @@ namespace controller {
                     }
 
                     var checker = board[i, j].Peel();
+                    if (resources.blackChecker == null) {
+                        Debug.LogError("Black checker isn't provided");
+                        this.enabled = false;
+                        return;
+                    }
                     var prefab = resources.blackChecker;
                     if (checker.type == ChType.Lady) {
                         prefab = resources.blackLady;
                     }
 
                     if (checker.color == ChColor.White) {
+                        if (resources.whiteChecker == null) {
+                            Debug.LogError("White checker isn't provided");
+                            this.enabled = false;
+                            return;
+                        }
+
                         prefab = resources.whiteChecker;
                         if (checker.type == ChType.Lady) {
                             prefab = resources.whiteLady;
@@ -561,10 +551,10 @@ namespace controller {
             return boardInfo;
         }
 
-        public List<SaveInfo> GetSaveInfos(string pathToFolder) {
+        public List<SaveInfo> GetSaveInfos() {
             string[] allfiles;
             try {
-                allfiles = Directory.GetFiles(pathToFolder, "*.save");
+                allfiles = Directory.GetFiles(Application.persistentDataPath, "*.save");
             } catch (Exception e) {
                 allfiles = default;
                 Debug.LogError(e);
