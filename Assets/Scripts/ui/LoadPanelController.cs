@@ -23,7 +23,6 @@ namespace ui {
         public PageArrows pageArrows;
         public Button pageButton;
 
-        public GameObject loadPanel;
         public int rows;
         public int columns;
         public int pageCountOnPanel;
@@ -58,13 +57,14 @@ namespace ui {
             }
             thereIsNothingText.SetActive(allSaveInfos.Count == 0);
 
-            var count = rows * columns;
-            var pageCount = Math.Ceiling(Convert.ToSingle(allSaveInfos.Count) / count);
 
             if (pagePanel == null) {
                 Debug.LogError("This component requires pagePanel");
                 return;
             }
+
+            var count = rows * columns;
+            var pageCount = Math.Ceiling(Convert.ToSingle(allSaveInfos.Count) / count);
 
             if (pageCountOnPanel != pageButtons.Count) {
                 for (int i = 2; i < pagePanel.transform.childCount - 2; i++) {
