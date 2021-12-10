@@ -57,7 +57,6 @@ namespace ui {
             }
             thereIsNothingText.SetActive(allSaveInfos.Count == 0);
 
-
             if (pagePanel == null) {
                 Debug.LogError("This component requires pagePanel");
                 return;
