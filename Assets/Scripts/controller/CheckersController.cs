@@ -24,7 +24,8 @@ namespace controller {
     public enum GameType {
         Russian,
         English,
-        International
+        International,
+        Vigman
     }
 
     public struct Checker {
@@ -659,6 +660,17 @@ namespace controller {
             selHighlight.SetActive(false);
             var rows = GetRowsFromCSV(text);
             var boardInfo = BoardInfoFromCSV(rows);
+
+            switch (boardInfo.type) {
+                case GameType.English:
+                case GameType.Russian:
+                    Camera.main.transform.position = resources.boardPositions.posFor8x8;
+                    break;
+                case GameType.International:
+                    Camera.main.transform.position = resources.boardPositions.posFor10x10;
+                    break;
+            }
+
             map.board = boardInfo.board;
             moveClr = boardInfo.moveColor;
             gameType = boardInfo.type;

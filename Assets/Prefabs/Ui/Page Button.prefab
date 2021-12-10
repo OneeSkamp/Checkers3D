@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 1134252961436110803}
   - component: {fileID: 4727402565526262305}
   - component: {fileID: 5062492887432114809}
+  - component: {fileID: -3167555389722960395}
   m_Layer: 0
   m_Name: Page Button
   m_TagString: Untagged
@@ -142,6 +143,19 @@ MonoBehaviour:
   m_FlexibleWidth: -1
   m_FlexibleHeight: -1
   m_LayoutPriority: 1
+--- !u!114 &-3167555389722960395
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5184538130343450697}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d45515e91890dc44db6e1555242504e0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  textComponent: {fileID: 6361949949456465158}
 --- !u!1 &6920855526796206292
 GameObject:
   m_ObjectHideFlags: 0

@@ -27,19 +27,38 @@ namespace ui {
         public int columns;
         public int pageCountOnPanel;
 
-        private List<Button> pageButtons = new List<Button>();
+        private List<Button> pageButtons;
+        private List<Button> arrowsList;
+
+        private void Awake() {
+            pageButtons = new List<Button>();
+            arrowsList = new List<Button>();
+
+            // arrowsList.Add(pageArrows.first);
+            // arrowsList.Add(pageArrows.previous);
+            // arrowsList.Add(pageArrows.next);
+            // arrowsList.Add(pageArrows.last);
+        }
 
         public void FillPanel(int page) {
             if (content == null) {
                 Debug.LogError("This component requires content");
                 return;
             }
+
+            if (content.GetComponent<GridLayoutGroup>() == null) {
+                Debug.LogError("This component requires GridLayoutGroup");
+                return;
+            }
             content.GetComponent<GridLayoutGroup>().constraintCount = columns;
 
-            pageArrows.next.interactable = false;
-            pageArrows.last.interactable = false;
-            pageArrows.first.interactable = false;
-            pageArrows.previous.interactable = false;
+            foreach (var arrow in arrowsList) {
+                arrow.interactable = false;
+            }
+            // pageArrows.next.interactable = false;
+            // pageArrows.last.interactable = false;
+            // pageArrows.first.interactable = false;
+            // pageArrows.previous.interactable = false;
 
             foreach (Transform item in content.transform) {
                 Destroy(item.gameObject);
@@ -56,6 +75,7 @@ namespace ui {
                 return;
             }
             thereIsNothingText.SetActive(allSaveInfos.Count == 0);
+            if (allSaveInfos.Count == 0) return;
 
             if (pagePanel == null) {
                 Debug.LogError("This component requires pagePanel");
@@ -63,7 +83,7 @@ namespace ui {
             }
 
             var count = rows * columns;
-            var pageCount = Math.Ceiling(Convert.ToSingle(allSaveInfos.Count) / count);
+            var pageCount = Mathf.CeilToInt(allSaveInfos.Count / count);
 
             if (pageCountOnPanel != pageButtons.Count) {
                 for (int i = 2; i < pagePanel.transform.childCount - 2; i++) {
@@ -71,13 +91,19 @@ namespace ui {
                 }
 
                 pageButtons.Clear();
+
+                if (pageButton == null) {
+                    Debug.LogError("This component requires pageButton");
+                    return;
+                }
+
+                if (pageButton.GetComponent<SetText>() == null) {
+                    Debug.LogError("This component requires set text");
+                    return;
+                }
+
                 for (int i = 0; i < pageCountOnPanel; i++) {
                     if (i >= pageCount) break;
-
-                    if (pageButton == null) {
-                        Debug.LogError("This component requires pageButton");
-                        return;
-                    }
 
                     var btn = Instantiate(pageButton, pagePanel.transform);
                     btn.transform.SetSiblingIndex(i + 2);
@@ -93,49 +119,44 @@ namespace ui {
                 }
             }
 
-            foreach (var btn in pageButtons) {
-                if (startPage > pageCount) break;
-                var i = startPage;
-                btn.image.color = Color.white;
+            var curPage = startPage;
+            for (int i = curPage; i <= pageCount && i - curPage < pageButtons.Count; i++) {
+                var btn = pageButtons[i - startPage];
+
+                var clr = Color.white;
                 if (i == page) {
-                    btn.image.color = Color.yellow;
+                    clr = Color.yellow;
                 }
-                btn.GetComponentInChildren<Text>().text = (i).ToString();
+                btn.image.color = clr;
+                btn.GetComponent<SetText>().Set(i.ToString());
                 btn.onClick.RemoveAllListeners();
-                btn.onClick.AddListener(() => FillPanel(i));
-                startPage++;
+                var buttonPage = i;
+                btn.onClick.AddListener(() => FillPanel(buttonPage));
             }
 
-            if (page != pageCount && pageCount > 0) {
-                pageArrows.next.interactable = true;
-                pageArrows.last.interactable = true;
+            for (int i = 0; i < arrowsList.Count; i++) {
+                arrowsList[i].onClick.RemoveAllListeners();
+                if (page != pageCount && i > 1 || page != 1 && i < 2) {
+                    arrowsList[i].interactable = true;
+                }
+            }
 
-                pageArrows.next.onClick.RemoveAllListeners();
+            if (page != pageCount) {
                 pageArrows.next.onClick.AddListener(() => FillPanel(page + 1));
-
-                pageArrows.last.onClick.RemoveAllListeners();
                 pageArrows.last.onClick.AddListener(() => FillPanel((int)pageCount));
             }
 
             if (page != 1) {
-                pageArrows.previous.interactable = true;
-                pageArrows.first.interactable = true;
-
-                pageArrows.previous.onClick.RemoveAllListeners();
                 pageArrows.previous.onClick.AddListener(() => FillPanel(page - 1));
-
-                pageArrows.first.onClick.RemoveAllListeners();
                 pageArrows.first.onClick.AddListener(() => FillPanel(1));
             }
 
-            var start = (page - 1) * count;
-            for (int i = start; i < start + count; i++) {
-                if (i >= allSaveInfos.Count || allSaveInfos.Count == 0) break;
-
-                if (loadItem == null) {
-                    Debug.LogError("This component requires loadItem");
-                    return;
-                }
+            if (loadItem == null) {
+                Debug.LogError("This component requires loadItem");
+                return;
+            }
+            var startSave = (page - 1) * count;
+            for (int i = startSave; i < startSave + count && i < allSaveInfos.Count; i++) {
 
                 var loaderObj = Instantiate(loadItem, content.transform);
                 loaderObj.transform.localScale = new Vector3(1f, 1f, 1f);
