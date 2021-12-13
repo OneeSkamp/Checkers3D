@@ -49,6 +49,7 @@ namespace controller {
     public struct BoardInfo {
         public Option<Checker>[,] board;
         public GameType type;
+        public int moveCount;
         public ChColor moveColor;
     }
 
@@ -80,6 +81,8 @@ namespace controller {
         private Map map;
         private GameType gameType;
         private ChColor moveClr;
+        private int moveCount;
+        private Vector2Int lastMovePos;
         private Option<Vector2Int> selected;
 
         private List<Vector2Int> dirs = new List<Vector2Int>();
@@ -218,7 +221,15 @@ namespace controller {
                 foreach (var move in moves.Value) {
                     if (move.isAttack) {
                         needAttack = true;
-                        break;
+                        if (gameType == GameType.Vigman) {
+                            if (moveCount == 0) {
+                                needAttack = false;
+                            }
+
+                            if (moveCount == 1 && lastMovePos != moves.Key) {
+                                needAttack = false;
+                            }
+                        }
                     }
                 }
             }
@@ -251,6 +262,7 @@ namespace controller {
                     if (needAttack && !cell.isAttack) continue;
                     if (cell.pos == clicked) {
                         moveCellOpt = Option<MoveCell>.Some(cell);
+                        lastMovePos = cell.pos;
                         break;
                     }
                 }
@@ -382,13 +394,19 @@ namespace controller {
                             map.board[attack.x, attack.y] = Option<Checker>.None();
                         }
 
-                        attacked.Clear();
-                        if (moveClr == ChColor.White) {
-                            moveClr = ChColor.Black;
-                        } else {
-                            moveClr = ChColor.White;
-                        }
                         possibleMoves = null;
+                        if (moveCount != 1 && gameType == GameType.Vigman) {
+                            moveCount++;
+                        } else {
+                            if (moveClr == ChColor.White) {
+                                moveClr = ChColor.Black;
+                            } else {
+                                moveClr = ChColor.White;
+                            }
+                            moveCount = 0;
+                        }
+
+                        attacked.Clear();
                     }
                 }
             }
@@ -482,46 +500,44 @@ namespace controller {
 
             var boardInfo = new BoardInfo();
 
-            var x = 0;
-            foreach (var row in rows) {
+            switch (rows[0][0]) {
+                case "0":
+                    boardInfo.type = GameType.Russian;
+                    boardInfo.board = new Option<Checker>[8, 8];
+                    break;
+                case "1":
+                    boardInfo.type = GameType.English;
+                    boardInfo.board = new Option<Checker>[8, 8];
+                    break;
+                case "2":
+                    boardInfo.type = GameType.International;
+                    boardInfo.board = new Option<Checker>[10, 10];
+                    break;
+                case "3":
+                    boardInfo.type = GameType.Vigman;
+                    boardInfo.board = new Option<Checker>[8, 8];
+                    break;
+            }
 
-                var y = 0;
-                foreach (var cell in row) {
-                    if (x == 0 && y == 0) {
-                        switch (cell) {
-                            case "0":
-                                boardInfo.type = GameType.Russian;
-                                boardInfo.board = new Option<Checker>[8, 8];
-                                break;
-                            case "1":
-                                boardInfo.type = GameType.English;
-                                boardInfo.board = new Option<Checker>[8, 8];
-                                break;
-                            case "2":
-                                boardInfo.type = GameType.International;
-                                boardInfo.board = new Option<Checker>[10, 10];
-                                break;
-                        }
-                        break;
-                    }
+            if (rows[1][0] == "1") {
+                boardInfo.moveColor = ChColor.Black;
+            } else {
+                boardInfo.moveColor = ChColor.White;
+            }
 
-                    if (x == 1 && y == 0) {
-                        if (cell == "1") {
-                            boardInfo.moveColor = ChColor.Black;
-                        } else {
-                            boardInfo.moveColor = ChColor.White;
-                        }
-                        x++;
-                        break;
-                    }
+            if (!Int32.TryParse(rows[2][0], out int moveCount)) {
+                Debug.LogError("Parse error");
+            }
+            boardInfo.moveCount = moveCount;
 
-                    if (cell == "") {
-                        boardInfo.board[x - 3, y] = Option<Checker>.None();
-                        y++;
+            for (int i = 3; i < boardInfo.board.GetLength(0) + 3; i++) {
+                for (int j = 0; j < boardInfo.board.GetLength(1); j++) {
+                    if (rows[i][j] == "") {
+                        boardInfo.board[i - 3, j] = Option<Checker>.None();
                         continue;
                     }
 
-                    var value = Int32.TryParse(cell, out int res);
+                    var value = Int32.TryParse(rows[i][j], out int res);
                     if (!value) {
                         Debug.LogError("Parse error");
                         break;
@@ -537,16 +553,8 @@ namespace controller {
                         chType = ChType.Lady;
                     }
 
-                    boardInfo.board[x - 3, y] = Option<Checker>.Some(Checker.Mk(color, chType));
-                    y++;
+                    boardInfo.board[i - 3, j] = Option<Checker>.Some(Checker.Mk(color, chType));
                 }
-                x++;
-            }
-
-            possibleMoves = null;
-            selected = Option<Vector2Int>.None();
-            foreach (Transform item in highlightsObj.transform) {
-                Destroy(item.gameObject);
             }
 
             return boardInfo;
@@ -609,6 +617,9 @@ namespace controller {
                 case GameType.International:
                     cells.Add(new List<string> {"2"});
                     break;
+                case GameType.Vigman:
+                    cells.Add(new List<string> {"3"});
+                    break;
             }
 
             if (moveClr == ChColor.White) {
@@ -616,6 +627,8 @@ namespace controller {
             } else {
                 cells.Add(new List<string> {"1"});
             }
+
+            cells.Add(new List<string> {moveCount.ToString()});
 
             for (int i = 0; i < map.board.GetLength(0); i++) {
                 var cellsRow = new List<string>();
@@ -684,8 +697,41 @@ namespace controller {
             foreach (var obj in map.figures) {
                 Destroy(obj);
             }
+
+            possibleMoves = null;
+            selected = Option<Vector2Int>.None();
+            foreach (Transform item in highlightsObj.transform) {
+                Destroy(item.gameObject);
+            }
+
             loadGame?.Invoke();
             FillCheckers(map.board);
+        }
+
+        public List<Checker> GetFiguresOnBoard(
+            Option<Checker>[,] board,
+            ChColor cellColor
+        ) {
+            var start = 1;
+            if (cellColor == ChColor.White) {
+                start = 0;
+            }
+
+            var checkers = new List<Checker>();
+            for (int i = 0; i < board.GetLength(0); i++) {
+                for (int j = start; j < board.GetLength(1); j += 2) {
+                    if (board[i, j].IsSome()) {
+                        checkers.Add(board[i, j].Peel());
+                    }
+                }
+                if (start == 1) {
+                    start = 0;
+                } else {
+                    start = 1;
+                }
+            }
+
+            return checkers;
         }
 
         public ErrorType DeleteFile(string path) {

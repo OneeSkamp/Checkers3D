@@ -361,6 +361,83 @@ MonoBehaviour:
   blackLady: {fileID: 6562868862257781079, guid: 658c7957bfe6ca048bc295310fa42b27, type: 3}
   moveHighlight: {fileID: 3011315072822383537, guid: d6d3f9a3d7fa1a940acc3fe863ab07fb, type: 3}
   selectedHighlight: {fileID: 3416308811518889918, guid: ede7a2832d9f97742a70f3c06927f737, type: 3}
+--- !u!1 &105211249
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 105211250}
+  - component: {fileID: 105211252}
+  - component: {fileID: 105211251}
+  m_Layer: 0
+  m_Name: Pages
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &105211250
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 105211249}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 849282001}
+  m_RootOrder: 2
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &105211251
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 105211249}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3245ec927659c4140ac4f8d17403cc18, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_HorizontalFit: 2
+  m_VerticalFit: 2
+--- !u!114 &105211252
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 105211249}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 30649d3a9faa99c48a7b1166b86bf2a0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Padding:
+    m_Left: 0
+    m_Right: 0
+    m_Top: 0
+    m_Bottom: 0
+  m_ChildAlignment: 4
+  m_Spacing: 0
+  m_ChildForceExpandWidth: 0
+  m_ChildForceExpandHeight: 0
+  m_ChildControlWidth: 0
+  m_ChildControlHeight: 0
+  m_ChildScaleWidth: 0
+  m_ChildScaleHeight: 0
+  m_ReverseArrangement: 0
 --- !u!1001 &112091892
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2288,7 +2365,6 @@ GameObject:
   m_Component:
   - component: {fileID: 849282001}
   - component: {fileID: 849282002}
-  - component: {fileID: 849282003}
   m_Layer: 0
   m_Name: Pages panel
   m_TagString: Untagged
@@ -2309,15 +2385,16 @@ RectTransform:
   m_Children:
   - {fileID: 189008488}
   - {fileID: 2035976805}
+  - {fileID: 105211250}
   - {fileID: 1921570585}
   - {fileID: 2011881570}
   m_Father: {fileID: 1355994997}
   m_RootOrder: 3
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0.000014575, y: -319}
-  m_SizeDelta: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 0.5}
+  m_AnchorMax: {x: 1, y: 0.5}
+  m_AnchoredPosition: {x: -0.9955139, y: -320.73}
+  m_SizeDelta: {x: -138.62, y: 53.4623}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &849282002
 MonoBehaviour:
@@ -2342,23 +2419,9 @@ MonoBehaviour:
   m_ChildForceExpandHeight: 0
   m_ChildControlWidth: 0
   m_ChildControlHeight: 0
-  m_ChildScaleWidth: 1
-  m_ChildScaleHeight: 1
+  m_ChildScaleWidth: 0
+  m_ChildScaleHeight: 0
   m_ReverseArrangement: 0
---- !u!114 &849282003
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 849282000}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3245ec927659c4140ac4f8d17403cc18, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_HorizontalFit: 1
-  m_VerticalFit: 1
 --- !u!1 &857471356
 GameObject:
   m_ObjectHideFlags: 0
@@ -2393,7 +2456,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -0.00008010864, y: 0.23004037}
+  m_AnchoredPosition: {x: -0.00008010864, y: 0.23004055}
   m_SizeDelta: {x: 300, y: 300}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &857471358
@@ -2909,7 +2972,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 931985820}
   m_HandleRect: {fileID: 931985819}
   m_Direction: 0
-  m_Value: -0.0000010297406
+  m_Value: -0.0000009010232
   m_Size: 0.66654086
   m_NumberOfSteps: 0
   m_OnValueChanged:
@@ -2978,7 +3041,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 359022891112203853, guid: 79c11b5f840496b41bb1a9eca2387cc1, type: 3}
       propertyPath: m_RootOrder
-      value: 2
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 359022891112203853, guid: 79c11b5f840496b41bb1a9eca2387cc1, type: 3}
       propertyPath: m_AnchorMax.x
@@ -3727,7 +3790,7 @@ MonoBehaviour:
   loadItem: {fileID: 4212802582830583064, guid: f1d4d339253f31147857d9dace441f81, type: 3}
   thereIsNothingText: {fileID: 857471356}
   chController: {fileID: 73204096}
-  pagePanel: {fileID: 849282000}
+  pagePanel: {fileID: 105211249}
   pageArrows:
     next: {fileID: 1921570586}
     previous: {fileID: 2035976806}
@@ -4671,7 +4734,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4812641520081754949, guid: 440d6a97d2cb0f743943ff775f347caf, type: 3}
       propertyPath: m_RootOrder
-      value: 3
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 4812641520081754949, guid: 440d6a97d2cb0f743943ff775f347caf, type: 3}
       propertyPath: m_AnchorMax.x

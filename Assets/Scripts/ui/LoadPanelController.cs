@@ -34,10 +34,10 @@ namespace ui {
             pageButtons = new List<Button>();
             arrowsList = new List<Button>();
 
-            // arrowsList.Add(pageArrows.first);
-            // arrowsList.Add(pageArrows.previous);
-            // arrowsList.Add(pageArrows.next);
-            // arrowsList.Add(pageArrows.last);
+            arrowsList.Add(pageArrows.first);
+            arrowsList.Add(pageArrows.previous);
+            arrowsList.Add(pageArrows.next);
+            arrowsList.Add(pageArrows.last);
         }
 
         public void FillPanel(int page) {
@@ -51,14 +51,6 @@ namespace ui {
                 return;
             }
             content.GetComponent<GridLayoutGroup>().constraintCount = columns;
-
-            foreach (var arrow in arrowsList) {
-                arrow.interactable = false;
-            }
-            // pageArrows.next.interactable = false;
-            // pageArrows.last.interactable = false;
-            // pageArrows.first.interactable = false;
-            // pageArrows.previous.interactable = false;
 
             foreach (Transform item in content.transform) {
                 Destroy(item.gameObject);
@@ -82,12 +74,30 @@ namespace ui {
                 return;
             }
 
-            var count = rows * columns;
-            var pageCount = Mathf.CeilToInt(allSaveInfos.Count / count);
+            var maxCount = rows * columns;
+            var pageCount = Mathf.CeilToInt(allSaveInfos.Count / (float)maxCount);
+
+            for (int i = 0; i < arrowsList.Count; i++) {
+                arrowsList[i].interactable = false;
+                arrowsList[i].onClick.RemoveAllListeners();
+                if (page != pageCount && i > 1 || page != 1 && i < 2) {
+                    arrowsList[i].interactable = true;
+                }
+            }
+
+            if (page != pageCount) {
+                pageArrows.next.onClick.AddListener(() => FillPanel(page + 1));
+                pageArrows.last.onClick.AddListener(() => FillPanel((int)pageCount));
+            }
+
+            if (page != 1) {
+                pageArrows.previous.onClick.AddListener(() => FillPanel(page - 1));
+                pageArrows.first.onClick.AddListener(() => FillPanel(1));
+            }
 
             if (pageCountOnPanel != pageButtons.Count) {
-                for (int i = 2; i < pagePanel.transform.childCount - 2; i++) {
-                    Destroy(pagePanel.transform.GetChild(i).gameObject);
+                foreach (Transform item in pagePanel.transform) {
+                    Destroy(item.gameObject);
                 }
 
                 pageButtons.Clear();
@@ -102,13 +112,14 @@ namespace ui {
                     return;
                 }
 
-                for (int i = 0; i < pageCountOnPanel; i++) {
-                    if (i >= pageCount) break;
-
+                for (int i = 0; i < pageCountOnPanel && i < pageCount; i++) {
                     var btn = Instantiate(pageButton, pagePanel.transform);
-                    btn.transform.SetSiblingIndex(i + 2);
                     pageButtons.Add(btn);
                 }
+
+                var rect = pageButton.GetComponent<RectTransform>().rect;
+                var size = new Vector2(rect.width * pageButtons.Count, rect.height);
+                pagePanel.GetComponent<RectTransform>().sizeDelta = size;
             }
 
             var startPage = 1;
@@ -117,6 +128,11 @@ namespace ui {
                 if (page <= pageCount && page > pageCount - pageCountOnPanel + 1) {
                     startPage = (int)pageCount - pageCountOnPanel + 1;
                 }
+            }
+
+            if (pageButton.GetComponent<SetText>() == null) {
+                Debug.LogError("No component SetText");
+                return;
             }
 
             var curPage = startPage;
@@ -134,32 +150,19 @@ namespace ui {
                 btn.onClick.AddListener(() => FillPanel(buttonPage));
             }
 
-            for (int i = 0; i < arrowsList.Count; i++) {
-                arrowsList[i].onClick.RemoveAllListeners();
-                if (page != pageCount && i > 1 || page != 1 && i < 2) {
-                    arrowsList[i].interactable = true;
-                }
-            }
-
-            if (page != pageCount) {
-                pageArrows.next.onClick.AddListener(() => FillPanel(page + 1));
-                pageArrows.last.onClick.AddListener(() => FillPanel((int)pageCount));
-            }
-
-            if (page != 1) {
-                pageArrows.previous.onClick.AddListener(() => FillPanel(page - 1));
-                pageArrows.first.onClick.AddListener(() => FillPanel(1));
-            }
-
             if (loadItem == null) {
-                Debug.LogError("This component requires loadItem");
+                Debug.LogError("This component requires Load item");
                 return;
             }
-            var startSave = (page - 1) * count;
-            for (int i = startSave; i < startSave + count && i < allSaveInfos.Count; i++) {
 
+            if (loadItem.GetComponent<FillLoadElement>() == null) {
+                Debug.LogError("no component FillLoadElement");
+            }
+
+            var startSave = (page - 1) * maxCount;
+
+            for (int i = startSave; i < startSave + maxCount && i < allSaveInfos.Count; i++) {
                 var loaderObj = Instantiate(loadItem, content.transform);
-                loaderObj.transform.localScale = new Vector3(1f, 1f, 1f);
 
                 var j = i;
                 Action loadAction = () => chController.LoadGame(allSaveInfos[j].text);
@@ -181,15 +184,11 @@ namespace ui {
                     FillPanel(page);
                 };
 
-                if (loaderObj.GetComponent<FillLoadElement>() == null) {
-                    Debug.LogError("no component FillLoadElement");
-                } else {
-                    var loadElem = loaderObj.GetComponent<FillLoadElement>();
-                    loadElem.buttons.loadBtn.onClick.AddListener(new UnityAction(loadAction));
-                    loadElem.buttons.deleteBtn.onClick.AddListener(new UnityAction(deleteAction));
+                var loadElem = loaderObj.GetComponent<FillLoadElement>();
+                loadElem.buttons.loadBtn.onClick.AddListener(new UnityAction(loadAction));
+                loadElem.buttons.deleteBtn.onClick.AddListener(new UnityAction(deleteAction));
 
-                    loadElem.Fill(allSaveInfos[i]);
-                }
+                loadElem.Fill(allSaveInfos[i]);
             }
         }
     }
