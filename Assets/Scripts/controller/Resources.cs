@@ -8,14 +8,12 @@ namespace controller {
     }
 
     public class Resources : MonoBehaviour {
-        public Transform board8x8Transform;
-        public Transform board10x10Transform;
+        public GameObject board8x8;
+        public GameObject board10x10;
         public Transform leftTop;
         public Transform leftTop10x10;
         public Transform offset;
         public BoardPositions boardPositions;
-        // public Transform cameraPos8x8;
-        // public Transform cameraPos10x10;
 
         public GameObject whiteChecker;
         public GameObject blackChecker;

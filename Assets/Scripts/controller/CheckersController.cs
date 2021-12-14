@@ -107,16 +107,16 @@ namespace controller {
                 return;
             }
 
-            if (resources.board8x8Transform == null) {
+            if (resources.board8x8.transform == null) {
                 Debug.LogError("Board transform isn't provided");
                 this.enabled = false;
                 return;
             }
-            highlightsObj.transform.SetParent(resources.board8x8Transform);
+            highlightsObj.transform.SetParent(resources.board8x8.transform);
 
             highlightsObj.transform.localRotation = Quaternion.Euler(0f, 0f, 0f);
 
-            selHighlight = Instantiate(resources.selectedHighlight, resources.board8x8Transform);
+            selHighlight = Instantiate(resources.selectedHighlight, resources.board8x8.transform);
             selHighlight.SetActive(false);
         }
 
@@ -175,9 +175,9 @@ namespace controller {
             if (selected.IsSome() && highlightsObj.transform.childCount == 0) {
                 var moveCells = possibleMoves[selected.Peel()];
 
-                highlightsObj.transform.SetParent(resources.board8x8Transform);
+                highlightsObj.transform.SetParent(resources.board8x8.transform);
                 if (gameType == GameType.International) {
-                    highlightsObj.transform.SetParent(resources.board10x10Transform);
+                    highlightsObj.transform.SetParent(resources.board10x10.transform);
                 }
 
                 foreach (var moveCell in moveCells) {
@@ -240,7 +240,7 @@ namespace controller {
 
                 selected = Option<Vector2Int>.Some(clicked);
 
-                selHighlight.transform.SetParent(resources.board8x8Transform);
+                selHighlight.transform.SetParent(resources.board8x8.transform);
                 if (gameType == GameType.International) {
                     selHighlight.transform.SetParent(checkers10x10.transform);
                 }
@@ -469,7 +469,7 @@ namespace controller {
         }
 
         public Vector2Int ToCell(Vector3 globalPoint, Vector3 leftTopPos) {
-            var point = resources.board8x8Transform.InverseTransformPoint(globalPoint);
+            var point = resources.board8x8.transform.InverseTransformPoint(globalPoint);
             var intermediate = (point - new Vector3(-leftTopPos.x, 0f, leftTopPos.z)) / 2;
             return new Vector2Int(Mathf.Abs((int)intermediate.z), Mathf.Abs((int)intermediate.x));
         }
@@ -667,8 +667,8 @@ namespace controller {
         }
 
         public void LoadGame(string text) {
-            resources.board8x8Transform.gameObject.SetActive(false);
-            resources.board10x10Transform.gameObject.SetActive(false);
+            resources.board8x8.SetActive(false);
+            resources.board10x10.SetActive(false);
 
             selHighlight.SetActive(false);
             var rows = GetRowsFromCSV(text);
@@ -677,6 +677,7 @@ namespace controller {
             switch (boardInfo.type) {
                 case GameType.English:
                 case GameType.Russian:
+                case GameType.Vigman:
                     Camera.main.transform.position = resources.boardPositions.posFor8x8;
                     break;
                 case GameType.International:
@@ -689,9 +690,9 @@ namespace controller {
             gameType = boardInfo.type;
 
             if (boardInfo.type == GameType.International) {
-                resources.board10x10Transform.gameObject.SetActive(true);
+                resources.board10x10.SetActive(true);
             } else {
-                resources.board8x8Transform.gameObject.SetActive(true);
+                resources.board8x8.SetActive(true);
             }
 
             foreach (var obj in map.figures) {
