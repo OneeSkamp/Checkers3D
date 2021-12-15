@@ -8,7 +8,10 @@ using System.IO;
 namespace controller {
     public enum ErrorType {
         None,
-        DeleteError
+        DeleteError,
+        CantGetTextFromFile,
+        CantGetRowsFromCSV,
+        CantGetBoardInfoFromCSV
     }
 
     public enum ChColor {
@@ -24,8 +27,7 @@ namespace controller {
     public enum GameType {
         Russian,
         English,
-        International,
-        Vigman
+        International
     }
 
     public struct Checker {
@@ -49,7 +51,6 @@ namespace controller {
     public struct BoardInfo {
         public Option<Checker>[,] board;
         public GameType type;
-        public int moveCount;
         public ChColor moveColor;
     }
 
@@ -81,8 +82,6 @@ namespace controller {
         private Map map;
         private GameType gameType;
         private ChColor moveClr;
-        private int moveCount;
-        private Vector2Int lastMovePos;
         private Option<Vector2Int> selected;
 
         private List<Vector2Int> dirs = new List<Vector2Int>();
@@ -107,14 +106,20 @@ namespace controller {
                 return;
             }
 
-            if (resources.board8x8.transform == null) {
-                Debug.LogError("Board transform isn't provided");
+            if (resources.board8x8 == null) {
+                Debug.LogError("Board 8X8 isn't provided");
                 this.enabled = false;
                 return;
             }
             highlightsObj.transform.SetParent(resources.board8x8.transform);
 
             highlightsObj.transform.localRotation = Quaternion.Euler(0f, 0f, 0f);
+
+            if (selHighlight == null) {
+                Debug.LogError("Board selected higlight isn't provided");
+                this.enabled = false;
+                return;
+            }
 
             selHighlight = Instantiate(resources.selectedHighlight, resources.board8x8.transform);
             selHighlight.SetActive(false);
@@ -221,15 +226,7 @@ namespace controller {
                 foreach (var move in moves.Value) {
                     if (move.isAttack) {
                         needAttack = true;
-                        if (gameType == GameType.Vigman) {
-                            if (moveCount == 0) {
-                                needAttack = false;
-                            }
-
-                            if (moveCount == 1 && lastMovePos != moves.Key) {
-                                needAttack = false;
-                            }
-                        }
+                        break;
                     }
                 }
             }
@@ -262,7 +259,6 @@ namespace controller {
                     if (needAttack && !cell.isAttack) continue;
                     if (cell.pos == clicked) {
                         moveCellOpt = Option<MoveCell>.Some(cell);
-                        lastMovePos = cell.pos;
                         break;
                     }
                 }
@@ -395,17 +391,12 @@ namespace controller {
                         }
 
                         possibleMoves = null;
-                        if (moveCount != 1 && gameType == GameType.Vigman) {
-                            moveCount++;
-                        } else {
-                            if (moveClr == ChColor.White) {
-                                moveClr = ChColor.Black;
-                            } else {
-                                moveClr = ChColor.White;
-                            }
-                            moveCount = 0;
-                        }
 
+                        if (moveClr == ChColor.White) {
+                            moveClr = ChColor.Black;
+                        } else {
+                            moveClr = ChColor.White;
+                        }
                         attacked.Clear();
                     }
                 }
@@ -417,6 +408,18 @@ namespace controller {
         }
 
         public void FillCheckers(Option<Checker>[,] board) {
+            if (resources.blackChecker == null) {
+                Debug.LogError("Black checker isn't provided");
+                this.enabled = false;
+                return;
+            }
+
+            if (resources.whiteChecker == null) {
+                Debug.LogError("White checker isn't provided");
+                this.enabled = false;
+                return;
+            }
+
             for (int i = 0; i < board.GetLength(0); i++) {
                 for (int j = 0; j < board.GetLength(1); j++) {
                     if (board[i, j].IsNone()) {
@@ -424,22 +427,12 @@ namespace controller {
                     }
 
                     var checker = board[i, j].Peel();
-                    if (resources.blackChecker == null) {
-                        Debug.LogError("Black checker isn't provided");
-                        this.enabled = false;
-                        return;
-                    }
                     var prefab = resources.blackChecker;
                     if (checker.type == ChType.Lady) {
                         prefab = resources.blackLady;
                     }
 
                     if (checker.color == ChColor.White) {
-                        if (resources.whiteChecker == null) {
-                            Debug.LogError("White checker isn't provided");
-                            this.enabled = false;
-                            return;
-                        }
 
                         prefab = resources.whiteChecker;
                         if (checker.type == ChType.Lady) {
@@ -474,31 +467,35 @@ namespace controller {
             return new Vector2Int(Mathf.Abs((int)intermediate.z), Mathf.Abs((int)intermediate.x));
         }
 
-        public string GetTextFromCSV(string path) {
+        public (string, ErrorType) GetTextFromCSV(string path) {
             try {
-                return File.ReadAllText(path);
+                return (File.ReadAllText(path), ErrorType.None);
             } catch (Exception e) {
                 Debug.LogError(e);
-                return null;
+                return (null, ErrorType.CantGetTextFromFile);
             }
         }
 
-        public List<List<string>> GetRowsFromCSV(string text) {
+        public (List<List<string>>, ErrorType) GetRowsFromCSV(string text) {
             if (text == null) {
                 Debug.LogError("Path is null");
             }
 
             try {
-                return CSV.Parse(text).rows;
+                return (CSV.Parse(text).rows, ErrorType.None);
             } catch (Exception e) {
                 Debug.LogError(e);
-                return null;
+                return (null, ErrorType.CantGetRowsFromCSV);
             }
         }
 
-        public BoardInfo BoardInfoFromCSV(List<List<string>> rows) {
-
+        public (BoardInfo, ErrorType) BoardInfoFromCSV(List<List<string>> rows) {
             var boardInfo = new BoardInfo();
+
+            if (rows[0][0] == null) {
+                Debug.LogError("Parse error");
+                return (default, ErrorType.CantGetBoardInfoFromCSV);
+            }
 
             switch (rows[0][0]) {
                 case "0":
@@ -513,10 +510,11 @@ namespace controller {
                     boardInfo.type = GameType.International;
                     boardInfo.board = new Option<Checker>[10, 10];
                     break;
-                case "3":
-                    boardInfo.type = GameType.Vigman;
-                    boardInfo.board = new Option<Checker>[8, 8];
-                    break;
+            }
+
+            if (rows[1][0] == null) {
+                Debug.LogError("Parse error");
+                return (default, ErrorType.CantGetBoardInfoFromCSV);
             }
 
             if (rows[1][0] == "1") {
@@ -525,22 +523,22 @@ namespace controller {
                 boardInfo.moveColor = ChColor.White;
             }
 
-            if (!Int32.TryParse(rows[2][0], out int moveCount)) {
-                Debug.LogError("Parse error");
-            }
-            boardInfo.moveCount = moveCount;
-
-            for (int i = 3; i < boardInfo.board.GetLength(0) + 3; i++) {
+            for (int i = 2; i < boardInfo.board.GetLength(0) + 2; i++) {
                 for (int j = 0; j < boardInfo.board.GetLength(1); j++) {
+                    if (rows[i][j] == null) {
+                        Debug.LogError("Parse error");
+                        return (default, ErrorType.CantGetBoardInfoFromCSV);
+                    }
+
                     if (rows[i][j] == "") {
-                        boardInfo.board[i - 3, j] = Option<Checker>.None();
+                        boardInfo.board[i - 2, j] = Option<Checker>.None();
                         continue;
                     }
 
                     var value = Int32.TryParse(rows[i][j], out int res);
                     if (!value) {
                         Debug.LogError("Parse error");
-                        break;
+                        return (default, ErrorType.CantGetBoardInfoFromCSV);
                     }
 
                     var color = ChColor.Black;
@@ -553,11 +551,11 @@ namespace controller {
                         chType = ChType.Lady;
                     }
 
-                    boardInfo.board[i - 3, j] = Option<Checker>.Some(Checker.Mk(color, chType));
+                    boardInfo.board[i - 2, j] = Option<Checker>.Some(Checker.Mk(color, chType));
                 }
             }
 
-            return boardInfo;
+            return (boardInfo, ErrorType.None);
         }
 
         public List<SaveInfo> GetSaveInfos() {
@@ -572,9 +570,23 @@ namespace controller {
             var saveInfos = new List<SaveInfo>();
             foreach (string filename in allfiles) {
                 var saveInfo = new SaveInfo();
-                var text = GetTextFromCSV(filename);
-                var rows = GetRowsFromCSV(text);
-                var boardInfo = BoardInfoFromCSV(rows);
+                var (text, textErr) = GetTextFromCSV(filename);
+                if (textErr != ErrorType.None) {
+                    Debug.LogError(textErr);
+                    return null;
+                }
+
+                var (rows, rowsErr) = GetRowsFromCSV(text);
+                if (rowsErr != ErrorType.None) {
+                    Debug.LogError(rowsErr);
+                    return null;
+                }
+
+                var (boardInfo, boardInfoErr) = BoardInfoFromCSV(rows);
+                if (boardInfoErr != ErrorType.None) {
+                    Debug.LogError(boardInfoErr);
+                    return null;
+                }
                 saveInfo.boardInfo.board = boardInfo.board;
                 saveInfo.boardInfo.moveColor = boardInfo.moveColor;
                 saveInfo.boardInfo.type = boardInfo.type;
@@ -588,7 +600,7 @@ namespace controller {
 
                 saveInfo.date = date;
                 saveInfo.savePath = filename;
-                saveInfo.text = GetTextFromCSV(filename);
+                saveInfo.text = text;
                 saveInfos.Add(saveInfo);
             }
 
@@ -617,9 +629,6 @@ namespace controller {
                 case GameType.International:
                     cells.Add(new List<string> {"2"});
                     break;
-                case GameType.Vigman:
-                    cells.Add(new List<string> {"3"});
-                    break;
             }
 
             if (moveClr == ChColor.White) {
@@ -627,8 +636,6 @@ namespace controller {
             } else {
                 cells.Add(new List<string> {"1"});
             }
-
-            cells.Add(new List<string> {moveCount.ToString()});
 
             for (int i = 0; i < map.board.GetLength(0); i++) {
                 var cellsRow = new List<string>();
@@ -667,17 +674,36 @@ namespace controller {
         }
 
         public void LoadGame(string text) {
+            if (resources.board8x8.transform == null) {
+                Debug.LogError("Board 8X8 isn't provided");
+                this.enabled = false;
+                return;
+            }
             resources.board8x8.SetActive(false);
+
+            if (resources.board10x10.transform == null) {
+                Debug.LogError("Board 10X10 isn't provided");
+                this.enabled = false;
+                return;
+            }
             resources.board10x10.SetActive(false);
 
             selHighlight.SetActive(false);
-            var rows = GetRowsFromCSV(text);
-            var boardInfo = BoardInfoFromCSV(rows);
+            var (rows, rowsErr) = GetRowsFromCSV(text);
+            if (rowsErr != ErrorType.None) {
+                Debug.LogError(rowsErr);
+                return;
+            }
+
+            var (boardInfo, boardInfoErr) = BoardInfoFromCSV(rows);
+            if (boardInfoErr != ErrorType.None) {
+                Debug.LogError(boardInfoErr);
+                return;
+            }
 
             switch (boardInfo.type) {
                 case GameType.English:
                 case GameType.Russian:
-                case GameType.Vigman:
                     Camera.main.transform.position = resources.boardPositions.posFor8x8;
                     break;
                 case GameType.International:
@@ -707,32 +733,6 @@ namespace controller {
 
             loadGame?.Invoke();
             FillCheckers(map.board);
-        }
-
-        public List<Checker> GetFiguresOnBoard(
-            Option<Checker>[,] board,
-            ChColor cellColor
-        ) {
-            var start = 1;
-            if (cellColor == ChColor.White) {
-                start = 0;
-            }
-
-            var checkers = new List<Checker>();
-            for (int i = 0; i < board.GetLength(0); i++) {
-                for (int j = start; j < board.GetLength(1); j += 2) {
-                    if (board[i, j].IsSome()) {
-                        checkers.Add(board[i, j].Peel());
-                    }
-                }
-                if (start == 1) {
-                    start = 0;
-                } else {
-                    start = 1;
-                }
-            }
-
-            return checkers;
         }
 
         public ErrorType DeleteFile(string path) {

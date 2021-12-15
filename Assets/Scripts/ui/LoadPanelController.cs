@@ -22,22 +22,18 @@ namespace ui {
         public GameObject pagePanel;
         public PageArrows pageArrows;
         public Button pageButton;
+        public List<Button> arrowButtons;
 
         public int rows;
         public int columns;
         public int pageCountOnPanel;
 
+        private int defoultPageCount;
         private List<Button> pageButtons;
-        private List<Button> arrowsList;
 
         private void Awake() {
             pageButtons = new List<Button>();
-            arrowsList = new List<Button>();
-
-            arrowsList.Add(pageArrows.first);
-            arrowsList.Add(pageArrows.previous);
-            arrowsList.Add(pageArrows.next);
-            arrowsList.Add(pageArrows.last);
+            defoultPageCount = pageCountOnPanel;
         }
 
         public void FillPanel(int page) {
@@ -77,55 +73,45 @@ namespace ui {
             var maxCount = rows * columns;
             var pageCount = Mathf.CeilToInt(allSaveInfos.Count / (float)maxCount);
 
-            // for (int i = 0; i < arrowsList.Count; i++) {
-            //     arrowsList[i].interactable = false;
-            //     arrowsList[i].onClick.RemoveAllListeners();
-            //     if (page != pageCount && i > 1 || page != 1 && i < 2) {
-            //         arrowsList[i].interactable = true;
-            //     }
-            // }
+            pageCountOnPanel = defoultPageCount;
+            if (pageCount <= pageCountOnPanel) {
+                pageCountOnPanel = pageCount;
+            }
 
-            // if (page != pageCount) {
-            //     pageArrows.next.onClick.AddListener(() => FillPanel(page + 1));
-            //     pageArrows.last.onClick.AddListener(() => FillPanel((int)pageCount));
-            // }
+            for (int i = 0; i < arrowButtons.Count; i++) {
+                arrowButtons[i].interactable = false;
+                arrowButtons[i].onClick.RemoveAllListeners();
+                if (page != pageCount && i > 1 || page != 1 && i < 2) {
+                    arrowButtons[i].interactable = true;
+                    if (page != 1) {
+                        arrowButtons[0].onClick.AddListener(() => FillPanel(1));
+                        arrowButtons[1].onClick.AddListener(() => FillPanel(page - 1));
+                    }
 
-            // if (page != 1) {
-            //     pageArrows.previous.onClick.AddListener(() => FillPanel(page - 1));
-            //     pageArrows.first.onClick.AddListener(() => FillPanel(1));
-            // }
-
-            if (pageCountOnPanel != pageButtons.Count) {
-                Debug.Log("+");
-                foreach (Transform item in pagePanel.transform) {
-                    Destroy(item.gameObject);
+                    if (page != pageCount) {
+                        arrowButtons[2].onClick.AddListener(() => FillPanel(page + 1));
+                        arrowButtons[3].onClick.AddListener(() => FillPanel((int)pageCount));
+                    }
                 }
+            }
 
-                pageButtons.Clear();
+            if (pageButtons.Count != pageCountOnPanel) {
+                if (pageButtons.Count < pageCountOnPanel) {
+                    if (pageButton == null) {
+                        Debug.LogError("This component requires pageButton");
+                        return;
+                    }
 
-                if (pageButton == null) {
-                    Debug.LogError("This component requires pageButton");
-                    return;
+                    for (int i = pageButtons.Count; i < pageCountOnPanel; i++) {
+                        var btn = Instantiate(pageButton, pagePanel.transform);
+                        pageButtons.Add(btn);
+                    }
+                } else if (pageButtons.Count > pageCountOnPanel) {
+                    for (int i = pageCountOnPanel; i < pageButtons.Count; i++) {
+                        Destroy(pageButtons[i].gameObject);
+                        pageButtons.RemoveAt(i);
+                    }
                 }
-
-                if (pageButton.GetComponent<SetText>() == null) {
-                    Debug.LogError("This component requires set text");
-                    return;
-                }
-
-                for (int i = pageButtons.Count; i < pageCountOnPanel && i < pageCount; i++) {
-                    var btn = Instantiate(pageButton, pagePanel.transform);
-                    pageButtons.Add(btn);
-                }
-
-                // for (int i = 0; i < pageCountOnPanel && i < pageCount; i++) {
-                //     var btn = Instantiate(pageButton, pagePanel.transform);
-                //     pageButtons.Add(btn);
-                // }
-
-                // var rect = pageButton.GetComponent<RectTransform>().rect;
-                // var size = new Vector2(rect.width * pageButtons.Count, rect.height);
-                // pagePanel.GetComponent<RectTransform>().sizeDelta = size;
             }
 
             var startPage = 1;
@@ -184,7 +170,6 @@ namespace ui {
 
                     if (content.transform.childCount == 1 && page != 1) {
                         page -= 1;
-                        // pageButtons.Clear();
                         FillPanel(page);
                     }
                     FillPanel(page);
