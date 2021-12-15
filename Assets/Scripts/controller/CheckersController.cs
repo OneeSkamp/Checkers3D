@@ -115,7 +115,7 @@ namespace controller {
 
             highlightsObj.transform.localRotation = Quaternion.Euler(0f, 0f, 0f);
 
-            if (selHighlight == null) {
+            if (resources.selectedHighlight == null) {
                 Debug.LogError("Board selected higlight isn't provided");
                 this.enabled = false;
                 return;
