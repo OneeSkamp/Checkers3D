@@ -77,16 +77,16 @@ namespace controller {
 
         private GameObject selHighlight;
         private GameObject highlightsObj;
-        private bool needAttack;
+        public bool needAttack;
 
         private Map map;
         private GameType gameType;
-        private ChColor moveClr;
+        public ChColor moveClr;
         private Option<Vector2Int> selected;
 
-        private List<Vector2Int> dirs = new List<Vector2Int>();
-        private HashSet<Vector2Int> attacked = new HashSet<Vector2Int>();
-        private Dictionary<Vector2Int, List<MoveCell>> possibleMoves;
+        public List<Vector2Int> dirs = new List<Vector2Int>();
+        public HashSet<Vector2Int> attacked = new HashSet<Vector2Int>();
+        public Dictionary<Vector2Int, List<MoveCell>> possibleMoves;
 
         private void Awake() {
             dirs.Add(new Vector2Int(1, 1));
@@ -216,6 +216,8 @@ namespace controller {
             if (gameType == GameType.International) {
                 clicked = ToCell(hit.point, resources.leftTop10x10.position);
             }
+
+            Debug.Log(clicked);
 
             foreach (Transform item in highlightsObj.transform) {
                 Destroy(item.gameObject);

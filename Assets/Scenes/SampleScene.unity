@@ -321,6 +321,8 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+  needAttack: 0
+  dirs: []
 --- !u!4 &73204097
 Transform:
   m_ObjectHideFlags: 0
@@ -2746,7 +2748,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 931985820}
   m_HandleRect: {fileID: 931985819}
   m_Direction: 0
-  m_Value: -0.00000077230544
+  m_Value: -0.000000901023
   m_Size: 0.66654086
   m_NumberOfSteps: 0
   m_OnValueChanged:
@@ -3159,9 +3161,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 1173328976}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9468aa10e92f882428d203df2c5a428f, type: 3}
+  m_Script: {fileID: 11500000, guid: 71dc562c0f1108741bb403d9c7f3e6c7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  layout: {fileID: 1173328978}
 --- !u!114 &1243838713 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 7389258172095024024, guid: a56602e5d54575a4fb53bf64bf303190, type: 3}
@@ -4008,9 +4011,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 1536736866}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9468aa10e92f882428d203df2c5a428f, type: 3}
+  m_Script: {fileID: 11500000, guid: 71dc562c0f1108741bb403d9c7f3e6c7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  layout: {fileID: 1536736869}
 --- !u!114 &1536736869
 MonoBehaviour:
   m_ObjectHideFlags: 0
