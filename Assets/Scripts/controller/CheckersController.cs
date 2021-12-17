@@ -79,7 +79,7 @@ namespace controller {
         private GameObject highlightsObj;
         public bool needAttack;
 
-        private Map map;
+        public Map map;
         private GameType gameType;
         public ChColor moveClr;
         private Option<Vector2Int> selected;
