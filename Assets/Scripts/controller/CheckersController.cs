@@ -217,8 +217,6 @@ namespace controller {
                 clicked = ToCell(hit.point, resources.leftTop10x10.position);
             }
 
-            Debug.Log(clicked);
-
             foreach (Transform item in highlightsObj.transform) {
                 Destroy(item.gameObject);
             }
