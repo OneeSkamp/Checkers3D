@@ -4,6 +4,7 @@ using UnityEngine.Events;
 using System.Collections.Generic;
 using option;
 using System.IO;
+using checkersApi;
 
 namespace controller {
     public enum ErrorType {
@@ -14,15 +15,15 @@ namespace controller {
         CantGetBoardInfoFromCSV
     }
 
-    public enum ChColor {
-        White,
-        Black
-    }
+    // public enum ChColor {
+    //     White,
+    //     Black
+    // }
 
-    public enum ChType {
-        Basic,
-        Lady
-    }
+    // public enum ChType {
+    //     Basic,
+    //     Lady
+    // }
 
     public enum GameType {
         Russian,
@@ -30,14 +31,14 @@ namespace controller {
         International
     }
 
-    public struct Checker {
-        public ChColor color;
-        public ChType type;
+    // public struct Ch {
+    //     public ChColor color;
+    //     public ChType type;
 
-        public static Checker Mk (ChColor color, ChType type) {
-            return new Checker { color = color, type = type };
-        }
-    }
+    //     public static Ch Mk (ChColor color, ChType type) {
+    //         return new Ch { color = color, type = type };
+    //     }
+    // }
 
     public struct MoveCell {
         public Vector2Int pos;
@@ -49,7 +50,7 @@ namespace controller {
     }
 
     public struct BoardInfo {
-        public Option<Checker>[,] board;
+        public Option<Ch>[,] board;
         public GameType type;
         public ChColor moveColor;
     }
@@ -63,7 +64,7 @@ namespace controller {
 
     public struct Map {
         public GameObject[,] figures;
-        public Option<Checker>[,] board;
+        public Option<Ch>[,] board;
     }
 
     public class CheckersController : MonoBehaviour {
@@ -95,7 +96,7 @@ namespace controller {
             dirs.Add(new Vector2Int(-1, -1));
 
             map.figures = new GameObject[10, 10];
-            map.board = new Option<Checker>[10, 10];
+            map.board = new Option<Ch>[10, 10];
 
             highlightsObj = new GameObject();
             highlightsObj.name = "Highlights";
@@ -275,7 +276,7 @@ namespace controller {
 
                 if (moveCell.pos == clicked) {
                     map.board[clicked.x, clicked.y] = map.board[sel.x, sel.y];
-                    map.board[sel.x, sel.y] = Option<Checker>.None();
+                    map.board[sel.x, sel.y] = Option<Ch>.None();
 
                     var chObj = map.figures[sel.x, sel.y];
                     map.figures[clicked.x, clicked.y] = chObj;
@@ -299,7 +300,7 @@ namespace controller {
                             obj = resources.whiteLady;
                         }
 
-                        var lady = Option<Checker>.Some(Checker.Mk(moveClr, ChType.Lady));
+                        var lady = Option<Ch>.Some(Ch.Mk(moveClr, ChType.Lady));
                         map.board[clicked.x, clicked.y] = lady;
 
                         Destroy(map.figures[clicked.x, clicked.y]);
@@ -387,7 +388,7 @@ namespace controller {
                     if (selected.IsNone()) {
                         foreach (var attack in attacked) {
                             Destroy(map.figures[attack.x, attack.y]);
-                            map.board[attack.x, attack.y] = Option<Checker>.None();
+                            map.board[attack.x, attack.y] = Option<Ch>.None();
                         }
 
                         possibleMoves = null;
@@ -407,7 +408,7 @@ namespace controller {
             }
         }
 
-        public void FillCheckers(Option<Checker>[,] board) {
+        public void FillCheckers(Option<Ch>[,] board) {
             if (resources.blackChecker == null) {
                 Debug.LogError("Black checker isn't provided");
                 this.enabled = false;
@@ -500,15 +501,15 @@ namespace controller {
             switch (rows[0][0]) {
                 case "0":
                     boardInfo.type = GameType.Russian;
-                    boardInfo.board = new Option<Checker>[8, 8];
+                    boardInfo.board = new Option<Ch>[8, 8];
                     break;
                 case "1":
                     boardInfo.type = GameType.English;
-                    boardInfo.board = new Option<Checker>[8, 8];
+                    boardInfo.board = new Option<Ch>[8, 8];
                     break;
                 case "2":
                     boardInfo.type = GameType.International;
-                    boardInfo.board = new Option<Checker>[10, 10];
+                    boardInfo.board = new Option<Ch>[10, 10];
                     break;
             }
 
@@ -531,7 +532,7 @@ namespace controller {
                     }
 
                     if (rows[i][j] == "") {
-                        boardInfo.board[i - 2, j] = Option<Checker>.None();
+                        boardInfo.board[i - 2, j] = Option<Ch>.None();
                         continue;
                     }
 
@@ -551,7 +552,7 @@ namespace controller {
                         chType = ChType.Lady;
                     }
 
-                    boardInfo.board[i - 2, j] = Option<Checker>.Some(Checker.Mk(color, chType));
+                    boardInfo.board[i - 2, j] = Option<Ch>.Some(Ch.Mk(color, chType));
                 }
             }
 

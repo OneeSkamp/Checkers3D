@@ -1,10 +1,8 @@
 {
-    "name": "ai",
+    "name": "checkersApi",
     "rootNamespace": "",
     "references": [
-        "GUID:c69add24acd040f409f08a52b618f6b4",
-        "GUID:2082608e637271ce183980079a785a90",
-        "GUID:1f2e3e08f43166e43826da88d7c69ccd"
+        "GUID:2082608e637271ce183980079a785a90"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
