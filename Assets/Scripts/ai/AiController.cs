@@ -29,7 +29,7 @@ namespace ai {
 
         public Button button;
 
-        public Dictionary<MovePath, int> xxx;
+        public Dictionary<MovePath, int> scorePaths;
         private int counter;
 
         private void Awake() {
@@ -43,7 +43,9 @@ namespace ai {
 
         private void CheckBuildTree(Vector2Int pos) {
             var clone = (Option<Ch>[,])checkersController.map.board.Clone();
-            var tree = CheckersApi.BuildTree(CellNode.Mk(false, pos, new List<CellNode>(), 0), new Vector2Int(), clone);
+            var tree = CheckersApi.BuildTree(
+                CellNode.Mk(false, pos, new List<CellNode>(), 0), new Vector2Int(), clone
+            );
             var list = CheckersApi.GetPathsFromTree(tree, new List<Vector2Int>());
             ReadTree(list);
         }
@@ -59,7 +61,7 @@ namespace ai {
             var count = 0;
             foreach (var path in paths) {
                 count++;
-                Debug.Log(path.cells.Count + "  " + path.isAttack + " " + "score" + path.score + "path");
+                Debug.Log(path.cells.Count + "  " + path.isAttack + " " + "score" + path.score);
                 foreach (var pos in path.cells) {
                     Debug.Log(pos + " in a path number " + count);
                 }
@@ -68,7 +70,7 @@ namespace ai {
 
         private MovePath GetBeterPath(Option<Ch>[,] board) {
             var bPath = new MovePath();
-            xxx = new Dictionary<MovePath, int>();
+            scorePaths = new Dictionary<MovePath, int>();
             for (int i = 0; i < board.GetLength(0); i++) {
                 for (int j = 0; j < board.GetLength(1); j++) {
                     if (board[i, j].IsNone()) continue;
@@ -81,32 +83,36 @@ namespace ai {
 
                     foreach (var path in paths) {
                         var cloneClone = CheckersApi.CopyBoard(clone);
-                        Debug.Log(checkersController.needAttack);
                         if (checkersController.needAttack != path.isAttack) continue;
                         Move(path, cloneClone);
                         var mScore = 0;
                         for (int x = 0; x < board.GetLength(0); x++) {
                             for (int y = 0; y < board.GetLength(1); y++) {
                                 if (board[x, y].IsNone()) continue;
-                                if (board[x, y].Peel().color == checkersController.moveClr) continue;
+                                if (board[x, y].Peel().color == checkersController.moveClr) {
+                                    continue;
+                                }
                                 var pos2 = new Vector2Int(x, y);
                                 var node2 = CellNode.Mk(false, pos2, new List<CellNode>(), 0);
                                 var clone2 = CheckersApi.CopyBoard(cloneClone);
                                 var tree2 = CheckersApi.BuildTree(node2, new Vector2Int(), clone2);
-                                var paths2 = CheckersApi.GetPathsFromTree(tree2, new List<Vector2Int>());
+                                var paths2 = CheckersApi.GetPathsFromTree(
+                                    tree2,
+                                    new List<Vector2Int>()
+                                );
                                 foreach (var a in paths2) {
                                     mScore += a.score;
                                 }
                             }
                         }
-                        xxx.Add(path, mScore);
+                        scorePaths.Add(path, mScore);
                     }
                 }
             }
 
             var s = new MovePath();
             var min = int.MaxValue;
-            foreach (var item in xxx) {
+            foreach (var item in scorePaths) {
                 if (item.Key.score != 0 && item.Value - item.Key.score < min){
                     s = item.Key;
                     min = item.Value - item.Key.score;
