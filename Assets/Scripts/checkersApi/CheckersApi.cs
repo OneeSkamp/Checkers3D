@@ -28,7 +28,12 @@ namespace checkersApi {
         public List<CellNode> childs;
         public int score;
 
-        public static CellNode Mk(bool isAttack, Vector2Int pos, List<CellNode> childs, int score) {
+        public static CellNode Mk(
+            bool isAttack,
+            Vector2Int pos,
+            List<CellNode> childs,
+            int score
+        ) {
             return new CellNode { isAttack = isAttack, pos = pos, childs = childs, score = score };
         }
     }
@@ -55,7 +60,6 @@ namespace checkersApi {
             backDir = -backDir;
 
             var chOpt = board[node.pos.x, node.pos.y];
-            // \if (chOpt.IsNone()) return;
             var ch = chOpt.Peel();
 
             var xDir = -1;
@@ -76,8 +80,11 @@ namespace checkersApi {
                     var nextOpt = board[nextPos.x, nextPos.y];
                     if (nextOpt.IsNone()) {
                         if (!chFound) {
+                            score = 10;
                             if(!node.isAttack && !wrongDir) {
-                                node.childs.Add(CellNode.Mk(false, nextPos, new List<CellNode>(), score));
+                                node.childs.Add(
+                                    CellNode.Mk(false, nextPos, new List<CellNode>(),score)
+                                );
                             }
                             if(ch.type == ChType.Basic) break;
                             nextPos += dir;
@@ -85,18 +92,25 @@ namespace checkersApi {
                         }
 
                         var clone = (Option<Ch>[,])board.Clone();
-                        Move(node.pos, nextPos, clone);
+                        board[nextPos.x, nextPos.y] = board[node.pos.x, node.pos.y];
+                        board[node.pos.x, node.pos.y] = Option<Ch>.None();
+
                         if (ch.type == ChType.Basic) {
-                            var blackPromote = ch.color == ChColor.Black && nextPos.x == 7;
-                            var whitePromote = ch.color == ChColor.White && nextPos.x == 0;
-                            if (blackPromote || whitePromote) {
+                            var bc = ch.color == ChColor.Black && nextPos.x == board.GetLength(0);
+                            var wt = ch.color == ChColor.White && nextPos.x == 0;
+
+                            if (bc || wt) {
                                 ch.type = ChType.Lady;
                                 score += 100;
                             }
                         }
 
                         node.childs.Add(
-                            BuildTree(CellNode.Mk(true, nextPos, new List<CellNode>(), score), dir, clone)
+                            BuildTree(
+                                CellNode.Mk(true, nextPos, new List<CellNode>(), score),
+                                dir,
+                                clone
+                            )
                         );
                         if (ch.type == ChType.Basic) break;
 
@@ -133,9 +147,15 @@ namespace checkersApi {
             return paths;
         }
 
-        public static void Move(Vector2Int from, Vector2Int to, Option<Ch>[,] board) {
-            board[to.x, to.y] = board[from.x, from.y];
-            board[from.x, from.y] = Option<Ch>.None();
+        public static Option<T>[,] CopyBoard<T>(Option<T>[,] board) {
+            var clone = new Option<T>[board.GetLength(0), board.GetLength(1)];
+            for (int i = 0; i < board.GetLength(0); i++) {
+                for (int j = 0; j < board.GetLength(1); j++) {
+                    clone[i, j] = board[i, j];
+                }
+            }
+
+            return clone;
         }
 
         public static bool IsOnBoard<T>(Vector2Int pos, Option<T>[,] board) {

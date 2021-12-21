@@ -7,11 +7,6 @@ using UnityEngine.UI;
 using checkersApi;
 
 namespace ai {
-    // public struct Path {
-    //     public bool isAttack;
-    //     public List<Vector2Int> positions;
-    // }
-
     public struct Node {
         public bool isAttack;
         public Vector2Int pos;
@@ -34,14 +29,14 @@ namespace ai {
 
         public Button button;
 
-        public Dictionary<Vector2Int, List<MovePath>> moves;
+        public Dictionary<MovePath, int> xxx;
         private int counter;
 
         private void Awake() {
         button.onClick.AddListener(() => {
             // Debug.Log("----------- Damka");
             // CheckBuildTree(new Vector2Int(4, 1));
-            BotMove(checkersController.map.board);
+            GetBeterPath(checkersController.map.board);
         });
 
         }
@@ -71,65 +66,81 @@ namespace ai {
             }
         }
 
-        private MovePath GetBeterPath(List<MovePath> paths) {
-            var bpath = new MovePath();
-            foreach (var path in paths) {
-                if (path.score > bpath.score) {
-                    bpath = path;
-                }
-            }
-
-            return bpath;
-        }
-
-        private void BotMove(Option<Ch>[,] board) {
-            var bbPath = new MovePath();
+        private MovePath GetBeterPath(Option<Ch>[,] board) {
+            var bPath = new MovePath();
+            xxx = new Dictionary<MovePath, int>();
             for (int i = 0; i < board.GetLength(0); i++) {
                 for (int j = 0; j < board.GetLength(1); j++) {
+                    if (board[i, j].IsNone()) continue;
+                    if (board[i, j].Peel().color != checkersController.moveClr) continue;
                     var pos = new Vector2Int(i, j);
                     var node = CellNode.Mk(false, pos, new List<CellNode>(), 0);
-                    var clone = (Option<Ch>[,])board.Clone();
+                    var clone = CheckersApi.CopyBoard(board);
                     var tree = CheckersApi.BuildTree(node, new Vector2Int(), clone);
                     var paths = CheckersApi.GetPathsFromTree(tree, new List<Vector2Int>());
-                    var bPath = GetBeterPath(paths);
-                    if (bPath.score > bbPath.score) {
-                        bbPath = bPath;
+
+                    foreach (var path in paths) {
+                        var cloneClone = CheckersApi.CopyBoard(clone);
+                        Debug.Log(checkersController.needAttack);
+                        if (checkersController.needAttack != path.isAttack) continue;
+                        Move(path, cloneClone);
+                        var mScore = 0;
+                        for (int x = 0; x < board.GetLength(0); x++) {
+                            for (int y = 0; y < board.GetLength(1); y++) {
+                                if (board[x, y].IsNone()) continue;
+                                if (board[x, y].Peel().color == checkersController.moveClr) continue;
+                                var pos2 = new Vector2Int(x, y);
+                                var node2 = CellNode.Mk(false, pos2, new List<CellNode>(), 0);
+                                var clone2 = CheckersApi.CopyBoard(cloneClone);
+                                var tree2 = CheckersApi.BuildTree(node2, new Vector2Int(), clone2);
+                                var paths2 = CheckersApi.GetPathsFromTree(tree2, new List<Vector2Int>());
+                                foreach (var a in paths2) {
+                                    mScore += a.score;
+                                }
+                            }
+                        }
+                        xxx.Add(path, mScore);
                     }
                 }
             }
-            // Debug.Log(bbPath.cells.Count);
-            Debug.Log(bbPath.cells[0] + " ____ " + bbPath.cells[bbPath.cells.Count - 1] + "score " + bbPath.score);
+
+            var s = new MovePath();
+            var min = int.MaxValue;
+            foreach (var item in xxx) {
+                if (item.Key.score != 0 && item.Value - item.Key.score < min){
+                    s = item.Key;
+                    min = item.Value - item.Key.score;
+                }
+            }
+
+            Debug.Log(bPath.cells == null);
+            Debug.Log(s.cells[0] + "____" + s.cells[s.cells.Count - 1] + "score " + s.score);
+
+            return bPath;
         }
 
-        // private void ChangeScoreBoard(Option<Checker>[,] board) {
-        //     var possMoves = checkersController.possibleMoves;
+        private void Move(MovePath path, Option<Ch>[,] board) {
+            var attacked = new List<Vector2Int>();
+            var pos = path.cells[0];
+            var movePos = path.cells[path.cells.Count - 1];
+            for (int i = 1; i <= path.cells.Count - 1; i++) {
+                var dif = path.cells[i] - path.cells[i - 1];
+                var attackDir = new Vector2Int(
+                    dif.x / Mathf.Abs(dif.x),
+                    dif.y / Mathf.Abs(dif.y)
+                );
 
-        //     for (int i = 0; i < board.GetLength(0); i++) {
-        //         for (int j = 0; j < board.GetLength(1); j++) {
-        //             if (board[i, j].IsNone()) continue;
-        //             var ch = board[i, j].Peel();
+                var attackPos = path.cells[i - 1] + attackDir;
 
-        //             var factor = 1;
-        //             if (ch.color == ChColor.White) {
-        //                 factor = -1;
-        //             }
+                attacked.Add(attackPos);
+            }
 
-        //             int moveLength = 1;
-        //             var activeCell = new Vector2Int(i, j);
-        //             foreach (var cell in possMoves[activeCell]) {
-        //                 if (cell.isAttack) {
-        //                     scoreBoard[i, j] = 2 * factor * moveLength;
-        //                 } else {
-        //                     scoreBoard[i, j] = 1 * factor;
-        //                 }
-        //             }
-        //         }
-        //     }
-        // }
+            foreach (var att in attacked) {
+                board[att.x, att.y] = Option<Ch>.None();
+            }
 
-        // private void Move(Vector2Int from, Vector2Int to, Option<Checker>[,] board) {
-        //     board[to.x, to.y] = board[from.x, from.y];
-        //     board[from.x, from.y] = Option<Checker>.None();
-        // }
+            board[movePos.x, movePos.y] = board[pos.x, pos.y];
+            board[pos.x, pos.y] = Option<Ch>.None();
+        }
     }
 }
