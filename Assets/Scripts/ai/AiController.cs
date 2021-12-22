@@ -33,12 +33,9 @@ namespace ai {
         private int counter;
 
         private void Awake() {
-        button.onClick.AddListener(() => {
-            // Debug.Log("----------- Damka");
-            // CheckBuildTree(new Vector2Int(4, 1));
-            GetBeterPath(checkersController.map.board);
-        });
-
+            button.onClick.AddListener(() => {
+                GetBeterPath(checkersController.map.board);
+            });
         }
 
         private void CheckBuildTree(Vector2Int pos) {
