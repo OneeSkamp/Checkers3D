@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Collections.Generic;
 using UnityEngine;
@@ -34,7 +35,10 @@ namespace ai {
 
         private void Awake() {
             button.onClick.AddListener(() => {
-                GetBeterPath(checkersController.map.board);
+                // GetBeterPath(checkersController.map.board);
+                var a = new Cell[10, 10];
+                a = CheckersApi.GetMatrix(new Cell {pos = new Vector2Int(5, 2), isAttack = false, s = 1}, 0, 0, new Vector2Int(), a, checkersController.map.board);
+                CheckersApi.ShowBoard(a);
             });
         }
 

@@ -7,7 +7,7 @@ namespace checkersApi {
         public ChColor color;
         public ChType type;
 
-        public static Ch Mk (ChColor color, ChType type) {
+        public static Ch Mk(ChColor color, ChType type) {
             return new Ch { color = color, type = type };
         }
     }
@@ -48,13 +48,121 @@ namespace checkersApi {
         }
     }
 
+    public struct Cell {
+        public int s;
+        public bool isAttack;
+        public Vector2Int pos;
+    }
+
     public static class CheckersApi {
+        public static int[,] matrix = new int[100, 100];
+
         public static readonly List<Vector2Int> dirs = new List<Vector2Int> {
             new Vector2Int (1, 1),
             new Vector2Int (1, -1),
             new Vector2Int (-1, 1),
             new Vector2Int (-1, -1)
         };
+
+        public static Cell[,] GetMatrix(Cell cell, int numV, int numR, Vector2Int backDir, Cell[,] m, Option<Ch>[,] board) {
+            backDir = -backDir;
+
+            var chOpt = board[cell.pos.x, cell.pos.y];
+            var ch = chOpt.Peel();
+
+            var xDir = -1;
+            if (ch.color == ChColor.Black) {
+                xDir = 1;
+            }
+
+            var x = numV;
+            var y = numR;
+            foreach (var dir in dirs) {
+                if (dir == backDir) continue;
+
+                var chFound = false;
+                var nextPos = cell.pos + dir;
+
+                var wrongDir = xDir != dir.x && ch.type == ChType.Basic;
+
+                int count = 0;
+                while (IsOnBoard(nextPos, board)) {
+
+                    var nextOpt = board[nextPos.x, nextPos.y];
+                    if (nextOpt.IsNone()) {
+                        if (!chFound) {
+                            if (!cell.isAttack && !wrongDir) {
+                                Debug.Log("+");
+                                m[numV, numR + count] = new Cell { s = 1, pos = cell.pos, isAttack = cell.isAttack };
+                                m[numV + count + 1, numR + count] = new Cell {s = -1, pos = nextPos, isAttack = false };
+
+                            }
+                            count++;
+                            if (ch.type == ChType.Basic) break;
+                            nextPos += dir;
+                            continue;
+                        }
+
+                        var clone = (Option<Ch>[,])board.Clone();
+                        clone[nextPos.x, nextPos.y] = clone[cell.pos.x, cell.pos.y];
+                        clone[cell.pos.x, cell.pos.y] = Option<Ch>.None();
+
+                        // if (ch.type == ChType.Basic) {
+                        //     var bc = ch.color == ChColor.Black && nextPos.x == board.GetLength(0);
+                        //     var wt = ch.color == ChColor.White && nextPos.x == 0;
+
+                        //     if (bc || wt) {
+                        //         ch.type = ChType.Lady;
+                        //     }
+                        // }
+
+                        m[numV, numR + count] = new Cell { s = 1, pos = cell.pos, isAttack = cell.isAttack };
+                        m[numV + count + 1, numR + count] = new Cell {s = -1, pos = nextPos, isAttack = true };
+
+                        GetMatrix(new Cell { s = 1, pos = nextPos, isAttack = true }, numV + count, numR + count, dir, m, clone);
+
+                        // node.childs.Add(
+                        //     BuildTree(
+                        //         CellNode.Mk(true, nextPos, new List<CellNode>(), score),
+                        //         dir,
+                        //         clone
+                        //     )
+                        // );
+                        if (ch.type == ChType.Basic) break;
+
+                    } else {
+                        var next = nextOpt.Peel();
+                        if (next.color == ch.color || chFound) break;
+                        chFound = true;
+                        count++;
+                    }
+                    nextPos += dir;
+                }
+            }
+            return m;
+        }
+        public static void ShowBoard(Cell[,] xxx) {
+            var output = "                                  0";
+            for (int i = 0; i < xxx.GetLength(0); i++) {
+                output += $"         {i}";
+            }
+            Debug.Log(output);
+            output = "                                  0|";
+
+            for (int i = 0; i < xxx.GetLength(1); i++) {
+                for (int j = 0; j < xxx.GetLength(0); j++) {
+                    // char cellInf = '*';
+                    // if (board[i, j].IsSome()) {
+                    //     var checker = board[i, j].Peel();
+                    //     int typeNum = (int)checker.color + (int)checker.type * 2;
+                    //     cellInf = (char)(48 + typeNum);
+                    // }
+                    output +=  $"         { xxx[i, j].s }";
+                }
+                Debug.Log(output);
+                output = "                                  " + (i + 1).ToString() + "|";
+            }
+        }
 
         public static CellNode BuildTree(CellNode node, Vector2Int backDir, Option<Ch>[,] board) {
             backDir = -backDir;
@@ -107,6 +215,79 @@ namespace checkersApi {
 
                         node.childs.Add(
                             BuildTree(
+                                CellNode.Mk(true, nextPos, new List<CellNode>(), score),
+                                dir,
+                                clone
+                            )
+                        );
+                        if (ch.type == ChType.Basic) break;
+
+                    } else {
+                        var next = nextOpt.Peel();
+                        if (next.color == ch.color || chFound) break;
+                        score += 50;
+                        if (next.type == ChType.Lady) {
+                            score += 100;
+                        }
+                        chFound = true;
+                    }
+                    nextPos += dir;
+                }
+            }
+            return node;
+        }
+
+        public static CellNode BuildTree2(CellNode node, Vector2Int backDir, Option<Ch>[,] board) {
+            backDir = -backDir;
+
+            var chOpt = board[node.pos.x, node.pos.y];
+            var ch = chOpt.Peel();
+
+            var xDir = -1;
+            if (ch.color == ChColor.Black) {
+                xDir = 1;
+            }
+
+            foreach (var dir in dirs) {
+                if (dir == backDir) continue;
+
+                var chFound = false;
+                var score = node.score;
+                var nextPos = node.pos + dir;
+
+                var wrongDir = xDir != dir.x && ch.type == ChType.Basic;
+
+                while (IsOnBoard(nextPos, board)) {
+                    var nextOpt = board[nextPos.x, nextPos.y];
+                    if (nextOpt.IsNone()) {
+                        if (!chFound) {
+                            score = 10;
+                            if(!node.isAttack && !wrongDir) {
+                                node.childs.Add(
+                                    CellNode.Mk(false, nextPos, new List<CellNode>(),score)
+                                );
+                            }
+                            if(ch.type == ChType.Basic) break;
+                            nextPos += dir;
+                            continue;
+                        }
+
+                        var clone = (Option<Ch>[,])board.Clone();
+                        board[nextPos.x, nextPos.y] = board[node.pos.x, node.pos.y];
+                        board[node.pos.x, node.pos.y] = Option<Ch>.None();
+
+                        if (ch.type == ChType.Basic) {
+                            var bc = ch.color == ChColor.Black && nextPos.x == board.GetLength(0);
+                            var wt = ch.color == ChColor.White && nextPos.x == 0;
+
+                            if (bc || wt) {
+                                ch.type = ChType.Lady;
+                                score += 100;
+                            }
+                        }
+
+                        node.childs.Add(
+                            BuildTree2(
                                 CellNode.Mk(true, nextPos, new List<CellNode>(), score),
                                 dir,
                                 clone
