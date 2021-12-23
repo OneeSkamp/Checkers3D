@@ -37,8 +37,12 @@ namespace ai {
             button.onClick.AddListener(() => {
                 // GetBeterPath(checkersController.map.board);
                 var a = new Cell[10, 10];
-                a = CheckersApi.GetMatrix(new Cell {pos = new Vector2Int(5, 2), isAttack = false, s = 1}, 0, 0, new Vector2Int(), a, checkersController.map.board);
+                a = CheckersApi.GetMatrix(new Cell {pos = new Vector2Int(5, 2), isAttack = false, s = 1}, new Vector2Int(0, 0), new Vector2Int(), a, checkersController.map.board);
+                var paths = CheckersApi.FindPaths(a, 0, new List<List<Cell>>());
+                // ReadTree(paths);
                 CheckersApi.ShowBoard(a);
+                Debug.Log(a[1,0].pos);
+                Debug.Log(a[2,1].pos);
             });
         }
 
@@ -47,8 +51,8 @@ namespace ai {
             var tree = CheckersApi.BuildTree(
                 CellNode.Mk(false, pos, new List<CellNode>(), 0), new Vector2Int(), clone
             );
-            var list = CheckersApi.GetPathsFromTree(tree, new List<Vector2Int>());
-            ReadTree(list);
+            // var list = CheckersApi.GetPathsFromTree(tree, new List<Vector2Int>());
+            // ReadTree(list);
         }
 
         private void ReadTree(Node node) {
@@ -58,13 +62,13 @@ namespace ai {
             }
         }
 
-        private void ReadTree(List<MovePath> paths) {
+        private void ReadTree(List<List<Cell>> paths) {
             var count = 0;
             foreach (var path in paths) {
                 count++;
-                Debug.Log(path.cells.Count + "  " + path.isAttack + " " + "score" + path.score);
-                foreach (var pos in path.cells) {
-                    Debug.Log(pos + " in a path number " + count);
+                Debug.Log(path.Count + "  " + path + " ");
+                foreach (var pos in path) {
+                    Debug.Log(pos.pos + " in a path number " + count);
                 }
             }
         }

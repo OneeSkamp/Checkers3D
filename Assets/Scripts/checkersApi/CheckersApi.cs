@@ -64,7 +64,7 @@ namespace checkersApi {
             new Vector2Int (-1, -1)
         };
 
-        public static Cell[,] GetMatrix(Cell cell, int numV, int numR, Vector2Int backDir, Cell[,] m, Option<Ch>[,] board) {
+        public static Cell[,] GetMatrix(Cell cell, Vector2Int counter, Vector2Int backDir, Cell[,] m, Option<Ch>[,] board) {
             backDir = -backDir;
 
             var chOpt = board[cell.pos.x, cell.pos.y];
@@ -75,8 +75,7 @@ namespace checkersApi {
                 xDir = 1;
             }
 
-            var x = numV;
-            var y = numR;
+            int countDir = 0;
             foreach (var dir in dirs) {
                 if (dir == backDir) continue;
 
@@ -85,62 +84,83 @@ namespace checkersApi {
 
                 var wrongDir = xDir != dir.x && ch.type == ChType.Basic;
 
-                int count = 0;
+                var clone = (Option<Ch>[,])board.Clone();
+
                 while (IsOnBoard(nextPos, board)) {
 
                     var nextOpt = board[nextPos.x, nextPos.y];
                     if (nextOpt.IsNone()) {
                         if (!chFound) {
                             if (!cell.isAttack && !wrongDir) {
-                                Debug.Log("+");
-                                m[numV, numR + count] = new Cell { s = 1, pos = cell.pos, isAttack = cell.isAttack };
-                                m[numV + count + 1, numR + count] = new Cell {s = -1, pos = nextPos, isAttack = false };
-
+                                m[counter.x, counter.y] = new Cell { s = 1, pos = cell.pos, isAttack = cell.isAttack };
+                                m[counter.y + 1, counter.y] = new Cell {s = -1, pos = nextPos, isAttack = false };
+                                // m[countStep, numV + countStep] = new Cell { s = 1, pos = cell.pos, isAttack = cell.isAttack };
+                                // m[numV + countStep + 1, numV + countStep] = new Cell {s = -1, pos = nextPos, isAttack = false };
+                                // Debug.Log("countstep ob move" + countStep);
+                                counter.y++;
                             }
-                            count++;
                             if (ch.type == ChType.Basic) break;
                             nextPos += dir;
                             continue;
                         }
 
-                        var clone = (Option<Ch>[,])board.Clone();
                         clone[nextPos.x, nextPos.y] = clone[cell.pos.x, cell.pos.y];
-                        clone[cell.pos.x, cell.pos.y] = Option<Ch>.None();
+                        // clone[cell.pos.x, cell.pos.y] = Option<Ch>.None();
 
-                        // if (ch.type == ChType.Basic) {
-                        //     var bc = ch.color == ChColor.Black && nextPos.x == board.GetLength(0);
-                        //     var wt = ch.color == ChColor.White && nextPos.x == 0;
+                        if (ch.type == ChType.Basic) {
+                            var bc = ch.color == ChColor.Black && nextPos.x == board.GetLength(0);
+                            var wt = ch.color == ChColor.White && nextPos.x == 0;
 
-                        //     if (bc || wt) {
-                        //         ch.type = ChType.Lady;
-                        //     }
-                        // }
+                            if (bc || wt) {
+                                ch.type = ChType.Lady;
+                            }
+                        }
 
-                        m[numV, numR + count] = new Cell { s = 1, pos = cell.pos, isAttack = cell.isAttack };
-                        m[numV + count + 1, numR + count] = new Cell {s = -1, pos = nextPos, isAttack = true };
+                        // Debug.Log("countstep att move" + countStep);
+                        // // m[countStep, numV + countStep] = new Cell { s = 1, pos = cell.pos, isAttack = cell.isAttack };
+                        // // m[numV + countStep + 1, numV + countStep] = new Cell {s = -1, pos = nextPos, isAttack = true };
+                        // countStep++;
+                        m[counter.x, counter.y] = new Cell { s = 1, pos = cell.pos, isAttack = cell.isAttack };
+                        m[counter.y + 1, counter.y] = new Cell {s = -1, pos = nextPos, isAttack = false };
+                                // m[countStep, numV + countStep] = new Cell { s = 1, pos = cell.pos, isAttack = cell.isAttack };
+                                // m[numV + countStep + 1, numV + countStep] = new Cell {s = -1, pos = nextPos, isAttack = false };
+                                // Debug.Log("countstep ob move" + countStep);
+                        counter.y++;
 
-                        GetMatrix(new Cell { s = 1, pos = nextPos, isAttack = true }, numV + count, numR + count, dir, m, clone);
-
-                        // node.childs.Add(
-                        //     BuildTree(
-                        //         CellNode.Mk(true, nextPos, new List<CellNode>(), score),
-                        //         dir,
-                        //         clone
-                        //     )
-                        // );
+                        GetMatrix(new Cell { s = 1, pos = nextPos, isAttack = true }, new Vector2Int(counter.y, counter.y), dir, m, clone);
+                        counter.y++;
                         if (ch.type == ChType.Basic) break;
 
                     } else {
                         var next = nextOpt.Peel();
                         if (next.color == ch.color || chFound) break;
                         chFound = true;
-                        count++;
                     }
                     nextPos += dir;
                 }
+                countDir++;
             }
             return m;
         }
+
+        public static List<List<Cell>> FindPaths(Cell[,] matrix, int numV, List<List<Cell>> paths) {
+            for (int i = 0; i < matrix.GetLength(0); i++) {
+                if (matrix[numV, i].s == 1) {
+                    var path = new List<Cell>();
+                    for (int j = 0; j < matrix.GetLength(1); j++) {
+                        if (matrix[j, i].s == -1) {
+                            path.Add(matrix[numV, i]);
+                            path.Add(matrix[j, i]);
+                            paths.Add(path);
+                            FindPaths(matrix, j, paths);
+                        }
+                    }
+                }
+            }
+
+            return paths;
+        }
+
         public static void ShowBoard(Cell[,] xxx) {
             var output = "                                  0";
             for (int i = 0; i < xxx.GetLength(0); i++) {
@@ -151,12 +171,7 @@ namespace checkersApi {
 
             for (int i = 0; i < xxx.GetLength(1); i++) {
                 for (int j = 0; j < xxx.GetLength(0); j++) {
-                    // char cellInf = '*';
-                    // if (board[i, j].IsSome()) {
-                    //     var checker = board[i, j].Peel();
-                    //     int typeNum = (int)checker.color + (int)checker.type * 2;
-                    //     cellInf = (char)(48 + typeNum);
-                    // }
+
                     output +=  $"         { xxx[i, j].s }";
                 }
                 Debug.Log(output);

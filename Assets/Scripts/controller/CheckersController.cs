@@ -15,30 +15,11 @@ namespace controller {
         CantGetBoardInfoFromCSV
     }
 
-    // public enum ChColor {
-    //     White,
-    //     Black
-    // }
-
-    // public enum ChType {
-    //     Basic,
-    //     Lady
-    // }
-
     public enum GameType {
         Russian,
         English,
         International
     }
-
-    // public struct Ch {
-    //     public ChColor color;
-    //     public ChType type;
-
-    //     public static Ch Mk (ChColor color, ChType type) {
-    //         return new Ch { color = color, type = type };
-    //     }
-    // }
 
     public struct MoveCell {
         public Vector2Int pos;
