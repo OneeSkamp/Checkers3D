@@ -35,7 +35,7 @@ namespace checkersApi {
         public static Cell[,] GetMovesMatrix(
             Cell cell,
             Vector2Int counter,
-            Cell[,] m,
+            Cell[,] matrix,
             Option<Ch>[,] board
         ) {
 
@@ -61,13 +61,13 @@ namespace checkersApi {
                     if (nextOpt.IsNone()) {
                         if (!chFound) {
                             if (!cell.isAttack && !wrongDir) {
-                                m[counter.x, counter.y] = new Cell { 
+                                matrix[counter.x, counter.y] = new Cell { 
                                     index = 1,
                                     pos = cell.pos,
                                     isAttack = cell.isAttack
                                 };
 
-                                m[counter.y + 1, counter.y] = new Cell {
+                                matrix[counter.y + 1, counter.y] = new Cell {
                                     index = -1,
                                     pos = nextPos,
                                     isAttack = false
@@ -91,13 +91,13 @@ namespace checkersApi {
                             }
                         }
 
-                        m[counter.x, counter.y] = new Cell { 
+                        matrix[counter.x, counter.y] = new Cell { 
                             index = 1,
                             pos = cell.pos,
                             isAttack = cell.isAttack
                         };
 
-                        m[counter.y + 1, counter.y] = new Cell {
+                        matrix[counter.y + 1, counter.y] = new Cell {
                             index = -1,
                             pos = nextPos,
                             isAttack = false
@@ -108,7 +108,7 @@ namespace checkersApi {
                         GetMovesMatrix(
                             new Cell { index = 1, pos = nextPos, isAttack = true },
                             new Vector2Int(counter.y, counter.y),
-                            m,
+                            matrix,
                             clone
                         );
 
@@ -123,7 +123,7 @@ namespace checkersApi {
                     nextPos += dir;
                 }
             }
-            return m;
+            return matrix;
         }
 
         public static void ShowBoard(Cell[,] xxx) {
