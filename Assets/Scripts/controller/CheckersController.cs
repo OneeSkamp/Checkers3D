@@ -281,7 +281,7 @@ namespace controller {
                             obj = resources.whiteLady;
                         }
 
-                        var lady = Option<Ch>.Some(Ch.Mk(moveClr, ChType.Lady));
+                        var lady = Option<Ch>.Some(new Ch { color = moveClr, type = ChType.Lady });
                         map.board[clicked.x, clicked.y] = lady;
 
                         Destroy(map.figures[clicked.x, clicked.y]);
@@ -533,7 +533,9 @@ namespace controller {
                         chType = ChType.Lady;
                     }
 
-                    boardInfo.board[i - 2, j] = Option<Ch>.Some(Ch.Mk(color, chType));
+                    boardInfo.board[i - 2, j] = Option<Ch>.Some(
+                        new Ch { color = color, type = chType }
+                    );
                 }
             }
 
