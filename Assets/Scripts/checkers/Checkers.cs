@@ -91,7 +91,7 @@ namespace checkers {
                             }
                         }
 
-                        matrix[counter.x, counter.y] = new Cell { 
+                        matrix[counter.x, counter.y] = new Cell {
                             index = 1,
                             pos = cell.pos,
                             isAttack = cell.isAttack
@@ -120,6 +120,7 @@ namespace checkers {
                         if (next.color == ch.color || chFound) break;
                         chFound = true;
                     }
+
                     nextPos += dir;
                 }
             }
