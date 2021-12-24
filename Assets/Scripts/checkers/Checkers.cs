@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using option;
 
-namespace checkersApi {
+namespace checkers {
     public struct Ch {
         public ChColor color;
         public ChType type;

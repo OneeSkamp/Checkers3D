@@ -5,7 +5,7 @@ using UnityEngine;
 using controller;
 using option;
 using UnityEngine.UI;
-using checkersApi;
+using checkers;
 
 namespace ai {
     public struct Node {

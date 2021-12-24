@@ -4,7 +4,7 @@ using UnityEngine.Events;
 using System.Collections.Generic;
 using option;
 using System.IO;
-using checkersApi;
+using checkers;
 
 namespace controller {
     public enum ErrorType {
