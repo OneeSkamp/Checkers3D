@@ -37,7 +37,7 @@ namespace ai {
             button.onClick.AddListener(() => {
                 // GetBeterPath(checkersController.map.board);
                 var a = new Cell[10, 10];
-                a = CheckersApi.GetMovesMatrix(
+                a = Checkers.GetMovesMatrix(
                     new Cell {pos = new Vector2Int(5, 2),
                     isAttack = false, index = 1},
                     new Vector2Int(),
@@ -45,7 +45,7 @@ namespace ai {
                     checkersController.map.board);
                 // var paths = CheckersApi.FindPaths(a, 0, new List<List<Cell>>());
                 // ReadTree(paths);
-                CheckersApi.ShowBoard(a);
+                Checkers.ShowBoard(a);
                 Debug.Log(a[1,0].pos);
                 Debug.Log(a[2,1].pos);
             });

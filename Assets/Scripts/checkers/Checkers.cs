@@ -24,7 +24,7 @@ namespace checkersApi {
         public Vector2Int pos;
     }
 
-    public static class CheckersApi {
+    public static class Checkers {
         public static readonly List<Vector2Int> dirs = new List<Vector2Int> {
             new Vector2Int (1, 1),
             new Vector2Int (1, -1),
