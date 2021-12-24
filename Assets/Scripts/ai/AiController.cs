@@ -30,9 +30,6 @@ namespace ai {
 
         public Button button;
 
-
-        private int counter;
-
         private void Awake() {
             button.onClick.AddListener(() => {
                 // GetBeterPath(checkersController.map.board);

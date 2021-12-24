@@ -2,7 +2,7 @@ using System;
 using UnityEngine;
 using UnityEngine.UI;
 using controller;
-using checkersApi;
+using checkers;
 
 namespace ui {
     [Serializable]
