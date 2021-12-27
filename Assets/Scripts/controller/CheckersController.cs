@@ -204,19 +204,18 @@ namespace controller {
             var m = Checkers.GetMovesMatrix(
                 new Cell { pos = clicked, isAttack = false, index = 1},
                 new Vector2Int(),
-                new Cell[10, 10],
+                new Cell[20, 20],
                 map.board
             );
 
             Checkers.ShowMatrix(m);
-            Debug.Log(m[1, 0].pos);
 
             // var a = Checkers.GetCells(clicked, map.board);
             // foreach (var i in a) {
             //     Debug.Log(i.pos);
             // }
 
-            // var a = Checkers.GetPaths(m, new List<Cell>(), 0);
+            // var a = Checkers.GetPaths(m);
             // foreach (var i in a) {
             //     Debug.Log("path");
             //     foreach (var item in i) {

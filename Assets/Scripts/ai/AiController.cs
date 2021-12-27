@@ -1,3 +1,4 @@
+using System.IO;
 using System.Collections.Generic;
 using UnityEngine;
 using controller;
@@ -15,27 +16,24 @@ namespace ai {
 
         private void Awake() {
             button.onClick.AddListener(() => {
-                // GetBeterPath(checkersController.map.board);
-                // var a = new Cell[10, 10];
-                // a = Checkers.GetMovesMatrix(
-                //     new Cell {pos = new Vector2Int(5, 2),
-                //     isAttack = false, index = 1},
-                //     new Vector2Int(),
-                //     a,
-                //     checkersController.map.board);
-                // // var paths = CheckersApi.FindPaths(a, 0, new List<List<Cell>>());
-                // // ReadTree(paths);
-                // Checkers.ShowBoard(a);
-                // Debug.Log(a[1,0].pos);
-                // Debug.Log(a[2,1].pos);
-                var path = new List<Cell> {
-                    new Cell {pos = new Vector2Int(4, 3), isAttack = false},
-                    new Cell {pos = new Vector2Int(2, 1), isAttack = true},
-                    new Cell {pos = new Vector2Int(0, 3), isAttack = true},
-                    new Cell {pos = new Vector2Int(2, 5), isAttack = true}
-                };
+                var matrix = new Cell[10,10];
+                var m = Checkers.GetMovesMatrix(
+                    new Cell { index = 1, pos = new Vector2Int(5, 2), isAttack = false },
+                    new Vector2Int(),
+                    matrix,
+                    checkersController.map.board
+                );
 
-                Debug.Log(GetPathScore(path, checkersController.map.board));
+                var p = new List<List<Cell>>();
+                p.Add(new List<Cell>());
+
+                var paths = GetPaths(m);
+                foreach (var path in paths) {
+                    Debug.Log("patsh");
+                    foreach ( var cell in path) {
+                        Debug.Log(cell.pos);
+                    }
+                }
             });
         }
 
@@ -74,6 +72,34 @@ namespace ai {
             }
 
             return score;
+        }
+
+        public static List<List<Cell>> GetPaths(Cell[,] matrix) {
+            var index = 0;
+            var paths = new List<List<Cell>>();
+            var path = new List<Cell>();
+            for (int i = 0; i < matrix.GetLength(0); i++) {
+                if (matrix[index, i].index == 0) {
+                    path.Add(matrix[index, i - 1]);
+                    paths.Add(path);
+                    index = 0;
+                    if (matrix[index, i].index == 0) {
+                        break;
+                    }
+                    path = new List<Cell>();
+                }
+
+                path.Add(matrix[index, i]);
+
+                for (int j = index; j < matrix.GetLength(1); j++) {
+                    if (matrix[j, i].index == -1) {
+                        index = j;
+                        break;
+                    }
+                }
+            }
+
+            return paths;
         }
 
         private void Move(List<Cell> path, Option<Ch>[,] board) {
