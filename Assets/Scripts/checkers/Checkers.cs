@@ -127,7 +127,52 @@ namespace checkers {
             return matrix;
         }
 
-        public static void ShowBoard(Cell[,] xxx) {
+        public static List<Cell> GetCells(Vector2Int pos, Option<Ch>[,] board) {
+            var m = new Cell[10, 10];
+            var matrix = GetMovesMatrix(
+                new Cell {pos = pos, isAttack = false, index = 1},
+                new Vector2Int(),
+                m,
+                board
+            );
+            ShowMatrix(matrix);
+
+            var list = new List<Cell>();
+            for (int i = 0; i < matrix.GetLength(0); i++) {
+                if (matrix[0, i].index == 1) {
+                    for (int j = 0; j < matrix.GetLength(1); j++) {
+                        if (matrix[j, i].index == -1) {
+                            list.Add(matrix[j, i]);
+                        }
+                    }
+                }
+            }
+
+            return list;
+        }
+
+        public static List<List<Cell>> GetPaths(
+            Cell[,] matrix,
+            List<Cell> path,
+            int count
+        ) {
+            var paths = new List<List<Cell>>();
+            for (int i = 0; i < matrix.GetLength(0); i++) {
+                if (matrix[count, i].index == 1) {
+                    for (int j = 0; j < matrix.GetLength(1); j++) {
+                        if (matrix[j, i].index == -1) {
+                            path.Add(matrix[j, i]);
+                            paths.AddRange(GetPaths(matrix, path, j));
+                        }
+                    }
+                }
+                paths.Add(path);
+                path = new List<Cell>();
+            }
+            return paths;
+        }
+
+        public static void ShowMatrix(Cell[,] xxx) {
             var output = "                                  0";
             for (int i = 0; i < xxx.GetLength(0); i++) {
                 output += $"         {i}";
