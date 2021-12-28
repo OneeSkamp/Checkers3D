@@ -1,4 +1,3 @@
-using System.IO;
 using System.Collections.Generic;
 using UnityEngine;
 using controller;
@@ -9,31 +8,11 @@ using checkers;
 namespace ai {
     public class AiController : MonoBehaviour {
         public CheckersController checkersController;
-
-        private int[,] scoreBoard;
-
         public Button button;
 
         private void Awake() {
             button.onClick.AddListener(() => {
-                var matrix = new Cell[10,10];
-                var m = Checkers.GetMovesMatrix(
-                    new Cell { index = 1, pos = new Vector2Int(5, 2), isAttack = false },
-                    new Vector2Int(),
-                    matrix,
-                    checkersController.map.board
-                );
-
-                var p = new List<List<Cell>>();
-                p.Add(new List<Cell>());
-
-                var paths = GetPaths(m);
-                foreach (var path in paths) {
-                    Debug.Log("patsh");
-                    foreach ( var cell in path) {
-                        Debug.Log(cell.pos);
-                    }
-                }
+                GetBestPath(checkersController.map.board);
             });
         }
 
@@ -74,7 +53,7 @@ namespace ai {
             return score;
         }
 
-        public static List<List<Cell>> GetPaths(Cell[,] matrix) {
+        public List<List<Cell>> GetPaths(Cell[,] matrix) {
             var index = 0;
             var paths = new List<List<Cell>>();
             var path = new List<Cell>();
@@ -100,6 +79,38 @@ namespace ai {
             }
 
             return paths;
+        }
+
+        public List<Cell> GetBestPath(Option<Ch>[,] board) {
+            var bestPath = new List<Cell>();
+            for (int i = 0; i < board.GetLength(0); i++) {
+                for (int j = 0; j < board.GetLength(1); j++) {
+                    var chOpt = board[i, j];
+                    if (chOpt.IsNone()) continue;
+
+                    var ch = chOpt.Peel();
+                    if (ch.color != checkersController.moveClr) break;
+                    var pos = new Vector2Int(i, j);
+                    var cell = new Cell { index = 1, pos = pos, isAttack = false };
+                    var m = new Cell[20, 20];
+                    var matrix = Checkers.GetMovesMatrix(cell, new Vector2Int(), m, board);
+                    var paths = GetPaths(matrix);
+                    var score = 0;
+                    foreach (var path in paths) {
+                        var pathScore = GetPathScore(path, board);
+                        if (pathScore > score) {
+                            score = pathScore;
+                            bestPath = path;
+                        }
+                    }
+                }
+            }
+
+            foreach (var cell in bestPath) {
+                Debug.Log(cell.pos);
+            }
+
+            return bestPath;
         }
 
         private void Move(List<Cell> path, Option<Ch>[,] board) {

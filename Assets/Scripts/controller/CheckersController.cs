@@ -199,7 +199,6 @@ namespace controller {
                 clicked = ToCell(hit.point, resources.leftTop10x10.position);
             }
 
-    // asdasdasdasdaddasdad
             // Debug.Log(clicked);
             var m = Checkers.GetMovesMatrix(
                 new Cell { pos = clicked, isAttack = false, index = 1},

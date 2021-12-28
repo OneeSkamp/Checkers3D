@@ -124,6 +124,7 @@ namespace checkers {
                     nextPos += dir;
                 }
             }
+
             return matrix;
         }
 
