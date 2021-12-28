@@ -127,7 +127,6 @@ namespace checkers {
 
             return matrix;
         }
-
         public static void ShowMatrix(Cell[,] xxx) {
             var output = "                                  0";
             for (int i = 0; i < xxx.GetLength(0); i++) {
