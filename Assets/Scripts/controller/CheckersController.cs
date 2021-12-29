@@ -200,14 +200,22 @@ namespace controller {
             }
 
             // Debug.Log(clicked);
-            var m = Checkers.GetMovesMatrix(
-                new Cell { pos = clicked, isAttack = false, index = 1},
-                new Vector2Int(),
-                new Cell[20, 20],
-                map.board
-            );
+            // var m = Checkers.GetMovesMatrix(
+            //     new Cell { pos = clicked, isAttack = false, index = 1},
+            //     new Vector2Int(),
+            //     new Cell[20, 20],
+            //     map.board
+            // );
 
-            Checkers.ShowMatrix(m);
+            var m = new Vector2Int?[10];
+            var matrix = new int[10, 10];
+            var mCh = map.board[clicked.x, clicked.y].Peel();
+            Debug.Log(Checkers.GetMovesMatrix(clicked, mCh, mCh, 0, false, matrix, m, map.board));
+            foreach (var a in m) {
+                Debug.Log(a);
+            }
+
+            Checkers.ShowMatrix(matrix);
 
             // var a = Checkers.GetCells(clicked, map.board);
             // foreach (var i in a) {
