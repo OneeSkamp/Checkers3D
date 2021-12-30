@@ -210,7 +210,8 @@ namespace controller {
             var m = new Vector2Int?[10];
             var matrix = new int[10, 10];
             var mCh = map.board[clicked.x, clicked.y].Peel();
-            Debug.Log(Checkers.GetMovesMatrix(clicked, mCh, mCh, 0, false, matrix, m, map.board));
+            var count = 0;
+            Debug.Log(Checkers.GetMovesMatrix(clicked, mCh, count, false, matrix, m, map.board));
             foreach (var a in m) {
                 Debug.Log(a);
             }

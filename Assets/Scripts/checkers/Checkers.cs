@@ -27,10 +27,8 @@ namespace checkers {
         };
 
         public static int GetMovesMatrix(
-            // Cell cell,
             Vector2Int pos,
             Ch ch,
-            Ch moveCh,
             int count,
             bool isAttack,
             int[,] matrix,
@@ -46,7 +44,6 @@ namespace checkers {
             if (posNum == null) {
                 arr[count] = pos;
                 posNum = count;
-                count++;
             }
 
             var isMove = false;
@@ -63,13 +60,13 @@ namespace checkers {
                         if (!chFound) {
                             if (!isAttack && !wrongDir) {
                                 if (nextPosNum == null) {
+                                    count++;
                                     arr[count] = nextPos;
                                     nextPosNum = count;
                                     isMove = true;
                                 }
 
                                 matrix[posNum.Value, nextPosNum.Value] = 1;
-                                count++;
                             }
 
                             if (ch.type == ChType.Basic) break;
@@ -85,22 +82,18 @@ namespace checkers {
                                 ch.type = ChType.Lady;
                             }
                         }
-                        moveCh = ch;
-                        board[nextPos.x, nextPos.y] = Option<Ch>.Some(moveCh);
 
-                        var value = 1;
+                        board[nextPos.x, nextPos.y] = Option<Ch>.Some(ch);
+
                         if (nextPosNum == null) {
+                            count++;
                             arr[count] = nextPos;
                             nextPosNum = count;
-                        } else {
-                            value = 2;
                         }
 
-                        matrix[posNum.Value, nextPosNum.Value] = value;
-                        count++;
+                        matrix[posNum.Value, nextPosNum.Value] = 1;
 
-                        GetMovesMatrix(nextPos, ch, moveCh, count, isAttack, matrix, arr, board);
-
+                        count = GetMovesMatrix(nextPos, ch, count, isAttack, matrix, arr, board);
                         if (ch.type == ChType.Basic) break;
 
                     } else {
@@ -108,6 +101,7 @@ namespace checkers {
                         if (next.color == ch.color || chFound) break;
                         chFound = true;
                         isAttack = true;
+
                         if (isMove) {
                             for (int i = 0; i < matrix.GetLength(0); i++) {
                                 matrix[0, i] = 0;
@@ -120,7 +114,6 @@ namespace checkers {
                             }
                         }
                     }
-
                     nextPos += dir;
                 }
             }
