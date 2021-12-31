@@ -160,6 +160,22 @@ namespace checkers {
             return count;
         }
 
+        public static bool IsAttackPos(Vector2Int pos, Vector2Int previusPos, Option<Ch>[,] board) {
+            var dif = pos - previusPos;
+            var attackDir = new Vector2Int(
+                dif.x / Mathf.Abs(dif.x),
+                dif.y / Mathf.Abs(dif.y)
+            );
+
+            var attackPos = previusPos + attackDir;
+
+            if (board[attackPos.x, attackPos.y].IsSome()) {
+                return true;
+            }
+
+            return false;
+        }
+
         public static int? PosInArr(Vector2Int pos, Vector2Int?[] arr) {
             for (int i = 0; i < arr.Length; i++) {
                 if (pos == arr[i]) {
