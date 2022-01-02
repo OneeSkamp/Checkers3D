@@ -122,32 +122,131 @@ namespace checkers {
         //     return count;
         // }
 
-        public static int MovePosOnDirection(
+        public static int GetMovesMatrix(
+            Vector2Int pos,
+            int[,] connections,
+            Vector2Int[] points,
+            Option<Ch>[,] board
+        ) {
+            var chOpt = board[pos.x, pos.y];
+            if (chOpt.IsNone()) {
+                return -1;
+            }
+            var ch = chOpt.Peel();
+
+            var xDir = -1;
+            if (ch.color == ChColor.Black) {
+                xDir = 1;
+            }
+
+            var count = GetPointsCount(points);
+            Debug.Log(count);
+            var posNum = PosInPoints(pos, points);
+            if (posNum == null) {
+                points[count] = pos;
+                posNum = count;
+            }
+
+            foreach (var dir in dirs) {
+                var point = MovePosOnDirection(pos, dir, board);
+
+
+                var wrongDir = xDir != dir.x && ch.type == ChType.Basic;
+
+                if (point != Vector2Int.zero) {
+                    points[count++] = point;
+                    var nextPosNum = PosInPoints(point, points);
+                    Debug.Log(nextPosNum);
+                    connections[posNum.Value, nextPosNum.Value] = 1;
+
+                    if (IsAttackPos(point, pos, board)) {
+                        GetMovesMatrix(point, connections, points, board);
+                    }
+                }
+
+                // while (IsOnBoard(nextPos, board)) {
+                //     var nextOpt = board[nextPos.x, nextPos.y];
+                //     if (nextOpt.IsNone()) {
+                //         if (!chFound) {
+
+                //             if (nextPosNum == null) {
+                //                 count++;
+                //                 points[count] = nextPos;
+                //                 nextPosNum = count;
+                //                 isMove = true;
+                //             }
+
+
+                //             if (ch.type == ChType.Basic) break;
+                //             nextPos += dir;
+                //             continue;
+                //         }
+
+                //         if (ch.type == ChType.Basic) {
+                //             var bc = ch.color == ChColor.Black && nextPos.x == board.GetLength(0);
+                //             var wt = ch.color == ChColor.White && nextPos.x == 0;
+
+                //             if (bc || wt) {
+                //                 ch.type = ChType.Lady;
+                //             }
+                //         }
+
+                //         // board[nextPos.x, nextPos.y] = Option<Ch>.Some(ch);
+
+                //         if (nextPosNum == null) {
+                //             count++;
+                //             points[count] = nextPos;
+                //             nextPosNum = count;
+                //         }
+
+                //         connections[posNum.Value, nextPosNum.Value] = 1;
+
+                //         count = GetMovesMatrix(nextPos, connections, points, board);
+                //         if (ch.type == ChType.Basic) break;
+
+                //     } else {
+                //         var next = nextOpt.Peel();
+                //         if (next.color == ch.color || chFound) break;
+                //         chFound = true;
+
+                //         if (isMove) {
+                //             for (int i = 0; i < connections.GetLength(0); i++) {
+                //                 connections[0, i] = 0;
+                //             }
+
+                //             for (int i = 1; i < points.Length; i++) {
+                //                 if (points[i] == null) break;
+                //                 points[i] = Vector2Int.zero;
+                //                 count--;
+                //             }
+                //         }
+                //     }
+
+                //     nextPos += dir;
+                // }
+            }
+
+            return count;
+        }
+
+        public static Vector2Int MovePosOnDirection(
             Vector2Int pos,
             Vector2Int dir,
-            Vector2Int[] steps,
             Option<Ch>[,] board
         ) {
             var chOp = board[pos.x, pos.y];
+
+            if (chOp.IsNone()) {
+                return default;
+            }
+
             var ch = chOp.Peel();
             var nextPos = pos + dir;
             var chFound = false;
-            var count = 0;
-            steps[count] = pos;
             while (IsOnBoard(nextPos, board)) {
                 var nextOpt = board[nextPos.x, nextPos.y];
                 if (nextOpt.IsNone()) {
-                    if (!chFound) {
-                        count++;
-                        steps[count] = nextPos;
-                        if (ch.type == ChType.Basic) break;
-                        nextPos += dir;
-                        continue;
-                    }
-
-                    count++;
-                    steps[count] = nextPos;
-                    if (ch.type == ChType.Basic) break;
+                    return nextPos;
                 } else {
                     var next = nextOpt.Peel();
                     if (next.color == ch.color || chFound) break;
@@ -155,6 +254,16 @@ namespace checkers {
                 }
 
                 nextPos += dir;
+            }
+
+            return default;
+        }
+
+        public static int GetPointsCount(Vector2Int[] points) {
+            var count = 0;
+            foreach (var point in points) {
+                if (point == Vector2Int.zero) break;
+                count++;
             }
 
             return count;
@@ -176,14 +285,14 @@ namespace checkers {
             return false;
         }
 
-        public static int? PosInArr(Vector2Int pos, Vector2Int?[] arr) {
+        public static int? PosInPoints(Vector2Int pos, Vector2Int[] arr) {
             for (int i = 0; i < arr.Length; i++) {
                 if (pos == arr[i]) {
                     return i;
                 }
             }
 
-            return null;
+            return -1;
         }
 
         public static void ShowMatrix(int[,] xxx) {

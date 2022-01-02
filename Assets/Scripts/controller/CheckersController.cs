@@ -208,17 +208,17 @@ namespace controller {
             // );
 
             // var m = new Vector2Int?[10];
-            // var matrix = new int[10, 10];
+            var matrix = new int[10, 10];
             // var mCh = map.board[clicked.x, clicked.y].Peel();
             // var count = 0;
-            // Debug.Log(Checkers.GetMovesMatrix(clicked, mCh, count, false, matrix, m, map.board));
             // foreach (var a in m) {
             //     Debug.Log(a);
             // }
 
             // Checkers.ShowMatrix(matrix);
             var arr = new Vector2Int[10];
-            Checkers.MovePosOnDirection(clicked, new Vector2Int(1, 1), arr, map.board);
+            Debug.Log(Checkers.GetMovesMatrix(clicked, matrix, arr, map.board));
+            // Checkers.MovePosOnDirection(clicked, new Vector2Int(1, 1), arr, map.board);
             foreach (var a in arr) {
                 Debug.Log(a);
             }
