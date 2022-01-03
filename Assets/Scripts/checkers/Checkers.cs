@@ -44,7 +44,6 @@ namespace checkers {
             }
 
             var count = GetPointsCount(points);
-            Debug.Log(count);
             var posNum = PosInPoints(pos, points);
             if (posNum == -1) {
                 points[count] = pos;
@@ -55,80 +54,34 @@ namespace checkers {
                 var wrongDir = xDir != dir.x && ch.type == ChType.Basic;
 
                 if (!wrongDir) {
-                    var point = MovePosOnDirection(pos, dir, board);
+                    var point = MovePosOnDirection(pos, ch, dir, board);
                     if (point != Vector2Int.zero) {
-                        // Debug.Log("+++");
                         points[count + 1] = point;
                         var nextPosNum = count + 1;
                         count++;
                         connections[posNum, nextPosNum] = 1;
 
+                        if (ch.type == ChType.Basic) continue;
+
                         if (IsAttackPos(point, pos, board)) {
+                            if (ch.type == ChType.Basic) {
+                                var bc = ch.color == ChColor.Black && point.x == board.GetLength(0);
+                                var wt = ch.color == ChColor.White && point.x == 0;
+
+                                if (bc || wt) {
+                                    ch.type = ChType.Lady;
+                                }
+                            }
+
+                            board[point.x, point.y] = Option<Ch>.Some(ch);
                             GetConnections(point, connections, points, board);
+                        } else {
+                            if (ch.type == ChType.Basic) {
+                                continue;
+                            }
                         }
                     }
                 }
-
-                // while (IsOnBoard(nextPos, board)) {
-                //     var nextOpt = board[nextPos.x, nextPos.y];
-                //     if (nextOpt.IsNone()) {
-                //         if (!chFound) {
-
-                //             if (nextPosNum == null) {
-                //                 count++;
-                //                 points[count] = nextPos;
-                //                 nextPosNum = count;
-                //                 isMove = true;
-                //             }
-
-
-                //             if (ch.type == ChType.Basic) break;
-                //             nextPos += dir;
-                //             continue;
-                //         }
-
-                //         if (ch.type == ChType.Basic) {
-                //             var bc = ch.color == ChColor.Black && nextPos.x == board.GetLength(0);
-                //             var wt = ch.color == ChColor.White && nextPos.x == 0;
-
-                //             if (bc || wt) {
-                //                 ch.type = ChType.Lady;
-                //             }
-                //         }
-
-                //         // board[nextPos.x, nextPos.y] = Option<Ch>.Some(ch);
-
-                //         if (nextPosNum == null) {
-                //             count++;
-                //             points[count] = nextPos;
-                //             nextPosNum = count;
-                //         }
-
-                //         connections[posNum.Value, nextPosNum.Value] = 1;
-
-                //         count = GetMovesMatrix(nextPos, connections, points, board);
-                //         if (ch.type == ChType.Basic) break;
-
-                //     } else {
-                //         var next = nextOpt.Peel();
-                //         if (next.color == ch.color || chFound) break;
-                //         chFound = true;
-
-                //         if (isMove) {
-                //             for (int i = 0; i < connections.GetLength(0); i++) {
-                //                 connections[0, i] = 0;
-                //             }
-
-                //             for (int i = 1; i < points.Length; i++) {
-                //                 if (points[i] == null) break;
-                //                 points[i] = Vector2Int.zero;
-                //                 count--;
-                //             }
-                //         }
-                //     }
-
-                //     nextPos += dir;
-                // }
             }
 
             return count;
@@ -136,16 +89,10 @@ namespace checkers {
 
         public static Vector2Int MovePosOnDirection(
             Vector2Int pos,
+            Ch ch,
             Vector2Int dir,
             Option<Ch>[,] board
         ) {
-            var chOp = board[pos.x, pos.y];
-
-            if (chOp.IsNone()) {
-                return default;
-            }
-
-            var ch = chOp.Peel();
             var nextPos = pos + dir;
             var chFound = false;
             while (IsOnBoard(nextPos, board)) {
