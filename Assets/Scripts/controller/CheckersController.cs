@@ -200,12 +200,6 @@ namespace controller {
             }
 
             // Debug.Log(clicked);
-            // var m = Checkers.GetMovesMatrix(
-            //     new Cell { pos = clicked, isAttack = false, index = 1},
-            //     new Vector2Int(),
-            //     new Cell[20, 20],
-            //     map.board
-            // );
 
             // var m = new Vector2Int?[10];
             // var mCh = map.board[clicked.x, clicked.y].Peel();
@@ -215,9 +209,10 @@ namespace controller {
             // }
 
             // Checkers.ShowMatrix(matrix);
-            var matrix = new int[10, 10];
-            var arr = new Vector2Int[10];
-            Debug.Log(Checkers.GetConnections(clicked, matrix, arr, map.board));
+            var matrix = new int[20, 20];
+            var arr = new Vector2Int[20];
+            var m = Checkers.GetMoves(clicked, map.board, arr, matrix);
+            // Debug.Log(Checkers.GetConnections(clicked, matrix, arr, map.board));
             // Checkers.MovePosOnDirection(clicked, new Vector2Int(1, 1), arr, map.board);
             foreach (var a in arr) {
                 Debug.Log(a);
