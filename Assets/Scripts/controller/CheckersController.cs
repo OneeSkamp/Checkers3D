@@ -208,7 +208,6 @@ namespace controller {
             // );
 
             // var m = new Vector2Int?[10];
-            var matrix = new int[10, 10];
             // var mCh = map.board[clicked.x, clicked.y].Peel();
             // var count = 0;
             // foreach (var a in m) {
@@ -216,12 +215,15 @@ namespace controller {
             // }
 
             // Checkers.ShowMatrix(matrix);
+            var matrix = new int[10, 10];
             var arr = new Vector2Int[10];
-            Debug.Log(Checkers.GetMovesMatrix(clicked, matrix, arr, map.board));
+            Debug.Log(Checkers.GetConnections(clicked, matrix, arr, map.board));
             // Checkers.MovePosOnDirection(clicked, new Vector2Int(1, 1), arr, map.board);
             foreach (var a in arr) {
                 Debug.Log(a);
             }
+
+            Checkers.ShowMatrix(matrix);
 
             // var a = Checkers.GetCells(clicked, map.board);
             // foreach (var i in a) {
