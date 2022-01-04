@@ -201,23 +201,19 @@ namespace controller {
 
             // Debug.Log(clicked);
 
-            // var m = new Vector2Int?[10];
-            // var mCh = map.board[clicked.x, clicked.y].Peel();
-            // var count = 0;
-            // foreach (var a in m) {
-            //     Debug.Log(a);
-            // }
-
-            // Checkers.ShowMatrix(matrix);
             var matrix = new int[20, 20];
             var arr = new Vector2Int[20];
-            var m = Checkers.GetMoves(clicked, map.board, arr, matrix);
+            var m = Checkers.BuildConnections(clicked, map.board, arr, matrix);
+            // var m = Checkers.GetMoves(clicked, map.board, arr, matrix);
             // Debug.Log(Checkers.GetConnections(clicked, matrix, arr, map.board));
             // Checkers.MovePosOnDirection(clicked, new Vector2Int(1, 1), arr, map.board);
-            foreach (var a in arr) {
-                Debug.Log(a);
-            }
+            var str = "";
 
+            foreach (var a in arr) {
+                // Debug.Log(a);
+                str += " " + a + " ";
+            }
+            Debug.Log(str);
             Checkers.ShowMatrix(matrix);
 
             // var a = Checkers.GetCells(clicked, map.board);

@@ -26,7 +26,7 @@ namespace checkers {
             new Vector2Int (-1, -1)
         };
 
-        public static int GetMoves(
+        public static int BuildConnections(
             Vector2Int pos,
             Option<Ch>[,] board,
             Vector2Int[] points,
@@ -56,21 +56,20 @@ namespace checkers {
             if (chOpt.IsNone()) {
                 Debug.LogError("no checker on position");
             }
+
             var ch = board[pos.x, pos.y].Peel();
-
-            var count = 0;
-            count = GetMovesMatrix(pos, board, ch, points, connections, false, count);
-
+            points[0] = pos;
+            var count = 1;
+            count = GetPossibleConnections(pos, board, ch, points, connections, count);
             return count;
         }
 
-        private static int GetMovesMatrix(
+        private static int GetPossibleConnections(
             Vector2Int pos,
             Option<Ch>[,] board,
             Ch ch,
-            Vector2Int[] arr,
-            int[,] matrix,
-            bool isAttack,
+            Vector2Int[] points,
+            int[,] connections,
             int count
         ) {
             if (!IsOnBoard(pos, board)) {
@@ -83,12 +82,12 @@ namespace checkers {
                 return -1;
             }
 
-            if (arr == null) {
+            if (points == null) {
                 Debug.LogError("points is null");
                 return -1;
             }
 
-            if (matrix == null) {
+            if (connections == null) {
                 Debug.LogError("connections is null");
                 return -1;
             }
@@ -103,247 +102,209 @@ namespace checkers {
                 xDir = 1;
             }
 
-            var posNum = PosInPoints(pos, arr);
-            if (posNum == -1) {
-                arr[count] = pos;
-                posNum = count;
-            }
-
-            // var isMove = false;
             foreach (var dir in dirs) {
-                var chFound = false;
-                // var nextPos = pos + dir;
-
                 var wrongDir = xDir != dir.x && ch.type == ChType.Basic;
 
-                var length = GetLength(pos, board, dir);
-
-                if (ch.type == ChType.Basic) {
-                    if (length > 0 && !wrongDir) {
-                        var nextPos = pos + dir;
-                        var nextPosNum = PosInPoints(nextPos, arr);
-                        count++;
-                        arr[count] = nextPos;
-                        nextPosNum = count;
-                        matrix[posNum, nextPosNum] = 1;
-                    }
-
-                    if (length == 0) {
-                        var nextPos = pos + dir;
-                        if (!IsOnBoard(nextPos, board)) continue;
-                        var nextOpt = board[nextPos.x, nextPos.y];
-                    }
+                var length = GetMaxLength(pos, board, dir);
+                if (length == -1) {
+                    Debug.LogError("incorrect finding length");
+                    return -1;
                 }
 
-                // while (IsOnBoard(nextPos, board)) {
-                //     var nextOpt = board[nextPos.x, nextPos.y];
-                //     var nextPosNum = PosInPoints(nextPos, arr);
-                //     if (nextOpt.IsNone()) {
-                //         if (!chFound) {
-                //             if (!isAttack && !wrongDir) {
-                //                 if (nextPosNum == -1) {
-                //                     count++;
-                //                     arr[count] = nextPos;
-                //                     nextPosNum = count;
-                //                     // isMove = true;
-                //                     matrix[posNum, nextPosNum] = 1;
-                //                 } else {
-                //                     matrix[posNum, nextPosNum] = 1;
-                //                     break;
-                //                 }
-                //             }
+                var maxLength = length;
 
-                //             if (ch.type == ChType.Basic) break;
-                //             nextPos += dir;
-                //             continue;
-                //         }
+                if (ch.type == ChType.Basic) maxLength = 1;
 
-                //         if (ch.type == ChType.Basic) {
-                //             var bc = ch.color == ChColor.Black && nextPos.x == board.GetLength(0);
-                //             var wt = ch.color == ChColor.White && nextPos.x == 0;
+                var nextPos = pos + dir * maxLength;
+                if (!IsOnBoard(nextPos, board)) break;
 
-                //             if (bc || wt) {
-                //                 ch.type = ChType.Lady;
-                //             }
-                //         }
+                if (!IsAttackDir(dir, pos, board, ch.color)) {
+                    for (var i = 1; i <= maxLength; i++) {
+                        if (board[nextPos.x, nextPos.y].IsSome()) break;
+                        var point = nextPos;
 
-                //         // board[nextPos.x, nextPos.y] = Option<Ch>.Some(ch);
+                        var colNum = count;
+                        for (var j = 0; j < count; j++) {
+                            if (points[j] == point) {
+                                colNum = j;
+                                break;
+                            }
+                        }
+                        points[colNum] = point;
+                        connections[count - 1, colNum] = 1;
+                        count++;
+                    }
+                } else {
+                    for (int i = 1; i < count; i++) {
+                        points[i] = default;
+                    }
+                    count = 1;
 
-                //         if (nextPosNum == -1) {
-                //             count++;
-                //             Debug.Log(count);
-                //             arr[count] = nextPos;
-                //             nextPosNum = count;
-                //             matrix[posNum, nextPosNum] = 1;
-                //         } else {
-                //             matrix[posNum, nextPosNum] = 1;
-                //             break;
-                //         }
-
-                //         count = GetMovesMatrix(nextPos,board, ch, arr, matrix, isAttack, count);
-                //         if (ch.type == ChType.Basic) break;
-
-                //     } else {
-                //         var next = nextOpt.Peel();
-                //         if (next.color == ch.color || chFound) break;
-                //         chFound = true;
-                //         isAttack = true;
-
-                //         // if (isMove) {
-                //         //     for (int i = 0; i < matrix.GetLength(0); i++) {
-                //         //         matrix[0, i] = 0;
-                //         //     }
-
-                //         //     for (int i = 1; i < arr.Length; i++) {
-                //         //         if (arr[i] == null) break;
-                //         //         arr[i] = Vector2Int.zero;
-                //         //         count--;
-                //         //     }
-                //         // }
-                //     }
-
-                //     nextPos += dir;
-                // }
+                    count = GetAttackConnections(pos, board, ch, points, connections, count);
+                }
             }
 
             return count;
         }
 
-        // private static int GetConnections(
-        //     Vector2Int pos,
-        //     int[,] connections,
-        //     Vector2Int[] points,
-        //     Option<Ch>[,] board
-        // ) {
-        //     var chOpt = board[pos.x, pos.y];
-        //     if (chOpt.IsNone()) {
-        //         return -1;
-        //     }
-        //     var ch = chOpt.Peel();
+        private static int GetAttackConnections(
+            Vector2Int pos,
+            Option<Ch>[,] board,
+            Ch ch,
+            Vector2Int[] points,
+            int[,] connections,
+            int count
+        ) {
+            if (!IsOnBoard(pos, board)) {
+                Debug.LogError("pos no is on board");
+                return -1;
+            }
 
-        //     var xDir = -1;
-        //     if (ch.color == ChColor.Black) {
-        //         xDir = 1;
-        //     }
+            if (count < 0) {
+                Debug.LogError("incorrect value for count");
+                return -1;
+            }
 
-        //     var count = GetPointsCount(points);
-        //     var posNum = PosInPoints(pos, points);
-        //     if (posNum == -1) {
-        //         points[count] = pos;
-        //         posNum = count;
-        //     }
+            if (points == null) {
+                Debug.LogError("points is null");
+                return -1;
+            }
 
-        //     foreach (var dir in dirs) {
-        //         var wrongDir = xDir != dir.x && ch.type == ChType.Basic;
+            if (connections == null) {
+                Debug.LogError("connections is null");
+                return -1;
+            }
 
-        //         if (wrongDir) continue;
+            if (board == null) {
+                Debug.LogError("board is null");
+                return -1;
+            }
 
-        //         var point = MovePosOnDirection(pos, ch, dir, board);
-        //         if (point != Vector2Int.zero) {
-        //             points[count + 1] = point;
-        //             var nextPosNum = count + 1;
-        //             count++;
-        //             connections[posNum, nextPosNum] = 1;
+            var xDir = -1;
+            if (ch.color == ChColor.Black) {
+                xDir = 1;
+            }
 
-        //             if (IsAttackPos(point, pos, board)) {
-        //                 if (ch.type == ChType.Basic) {
-        //                     var bc = ch.color == ChColor.Black && point.x == board.GetLength(0);
-        //                     var wt = ch.color == ChColor.White && point.x == 0;
+            foreach (var dir in dirs) {
+                if (!IsAttackDir(dir, pos, board, ch.color)) continue;
 
-        //                     if (bc || wt) {
-        //                         ch.type = ChType.Lady;
-        //                     }
-        //                 }
+                var length = GetMaxLength(pos, board, dir);
+                if (length == -1) {
+                    Debug.LogError("incorrect finding length");
+                    return -1;
+                }
 
-        //                 board[point.x, point.y] = Option<Ch>.Some(ch);
-        //                 GetConnections(point, connections, points, board);
-        //             } else {
-        //                 if (ch.type == ChType.Basic) {
-        //                     continue;
-        //                 }
-        //             }
-        //         }
-        //     }
+                var wrongDir = xDir != dir.x && ch.type == ChType.Basic;
+                var maxLength = length;
 
-        //     return count;
-        // }
+                if (ch.type == ChType.Basic) maxLength = 1;
 
-        private static int GetLength(Vector2Int pos, Option<Ch>[,] board, Vector2Int dir) {
+                var nextPos = pos + dir * maxLength;
+                if (!IsOnBoard(nextPos, board)) {
+                    continue;
+                }
+
+                var point = nextPos + dir;
+                if (!IsOnBoard(point, board)) {
+                    continue;
+                }
+
+                var colNum = count;
+                var rowNum = count;
+                var oldPos = false;
+                for (var i = 0; i < count; i++) {
+                    if (points[i] == pos) {
+                        rowNum = i;
+                    }
+
+                    if (points[i] == point) {
+                        colNum = i;
+                        for (int j = 0; j < board.GetLength(1); j++) {
+                            if (connections[i, j] == 0) continue;
+
+                            if (points[j] == pos) {
+                                oldPos = true;
+                                break;
+                            }
+                        }
+                        break;
+                    }
+                }
+
+                if (oldPos) continue;
+                points[colNum] = point;
+                connections[rowNum, colNum] = 1;
+                count++;
+
+                count = GetAttackConnections(point, board, ch, points, connections, count);
+            }
+
+            return count;
+        }
+
+        private static int GetMaxLength(Vector2Int pos, Option<Ch>[,] board, Vector2Int dir) {
+            if (!IsOnBoard(pos, board)) {
+                Debug.LogError("pos outside board");
+                return -1;
+            }
+
+            if (board == null) {
+                Debug.LogError("board is null");
+                return -1;
+            }
+
             var nextPos = pos + dir;
             var length = 0;
             while (IsOnBoard(nextPos, board)) {
-                if (board[nextPos.x, nextPos.y].IsNone()) {
-                    length++;
-                } else {
-                    break;
-                }
+                if (board[nextPos.x, nextPos.y].IsSome()) break;
+                length++;
+                nextPos += dir;
             }
 
             return length;
         }
 
-        private static Vector2Int MovePosOnDirection(
-            Vector2Int pos,
-            Ch ch,
+        private static bool IsAttackDir(
             Vector2Int dir,
-            Option<Ch>[,] board
+            Vector2Int pos,
+            Option<Ch>[,] board,
+            ChColor chColor
         ) {
-            var nextPos = pos + dir;
-            var chFound = false;
-            while (IsOnBoard(nextPos, board)) {
-                var nextOpt = board[nextPos.x, nextPos.y];
-                if (nextOpt.IsNone()) {
-                    return nextPos;
-                } else {
-                    var next = nextOpt.Peel();
-                    if (next.color == ch.color || chFound) break;
-                    chFound = true;
-                }
-
-                nextPos += dir;
+            if (!IsOnBoard(pos, board)) {
+                Debug.LogError("pos outside board");
+                return false;
             }
 
-            return default;
-        }
+            if (board == null) {
+                Debug.LogError("board is null");
+                return false;
+            }
 
-        // private static int GetPointsCount(Vector2Int[] points) {
-        //     var count = 0;
-        //     foreach (var point in points) {
-        //         if (point == Vector2Int.zero) break;
-        //         count++;
-        //     }
+            var nextPos = pos + dir;
+            if (!IsOnBoard(nextPos, board)) {
+                return false;
+            }
 
-        //     return count;
-        // }
+            var attackChOpt = board[nextPos.x, nextPos.y];
+            if (attackChOpt.IsNone()) {
+                return false;
+            }
 
-        private static bool IsAttackPos(
-            Vector2Int pos,
-            Vector2Int previusPos,
-            Option<Ch>[,] board
-        ) {
-            var dif = pos - previusPos;
-            var attackDir = new Vector2Int(
-                dif.x / Mathf.Abs(dif.x),
-                dif.y / Mathf.Abs(dif.y)
-            );
+            var attackCh = attackChOpt.Peel();
+            if (attackCh.color == chColor) {
+                return false;
+            }
 
-            var attackPos = previusPos + attackDir;
+            var attackPos = nextPos + dir;
+            if (!IsOnBoard(attackPos, board)) {
+                return false;
+            }
 
             if (board[attackPos.x, attackPos.y].IsSome()) {
-                return true;
+                return false;
             }
 
-            return false;
-        }
-
-        private static int PosInPoints(Vector2Int pos, Vector2Int[] arr) {
-            for (int i = 0; i < arr.Length; i++) {
-                if (pos == arr[i]) {
-                    return i;
-                }
-            }
-
-            return -1;
+            return true;
         }
 
         public static void ShowMatrix(int[,] xxx) {
