@@ -105,7 +105,7 @@ namespace checkers {
             foreach (var dir in dirs) {
                 var wrongDir = xDir != dir.x && ch.type == ChType.Basic;
 
-                var length = GetMaxLength(pos, board, dir);
+                var length = GetLengthToCh(pos, board, dir);
                 if (length == -1) {
                     Debug.LogError("incorrect finding length");
                     return -1;
@@ -113,13 +113,16 @@ namespace checkers {
 
                 var maxLength = length;
 
-                if (ch.type == ChType.Basic) maxLength = 1;
+                if (ch.type == ChType.Basic) {
+                    maxLength = 1;
+                }
 
                 var nextPos = pos + dir * maxLength;
                 if (!IsOnBoard(nextPos, board)) break;
 
                 if (!IsAttackDir(dir, pos, board, ch.color)) {
                     for (var i = 1; i <= maxLength; i++) {
+                        if (!IsOnBoard(nextPos, board)) break;
                         if (board[nextPos.x, nextPos.y].IsSome()) break;
                         var point = nextPos;
 
@@ -188,7 +191,7 @@ namespace checkers {
             foreach (var dir in dirs) {
                 if (!IsAttackDir(dir, pos, board, ch.color)) continue;
 
-                var length = GetMaxLength(pos, board, dir);
+                var length = GetLengthToCh(pos, board, dir);
                 if (length == -1) {
                     Debug.LogError("incorrect finding length");
                     return -1;
@@ -197,7 +200,9 @@ namespace checkers {
                 var wrongDir = xDir != dir.x && ch.type == ChType.Basic;
                 var maxLength = length;
 
-                if (ch.type == ChType.Basic) maxLength = 1;
+                if (ch.type == ChType.Basic) {
+                    maxLength = 1;
+                }
 
                 var nextPos = pos + dir * maxLength;
                 if (!IsOnBoard(nextPos, board)) {
@@ -242,7 +247,7 @@ namespace checkers {
             return count;
         }
 
-        private static int GetMaxLength(Vector2Int pos, Option<Ch>[,] board, Vector2Int dir) {
+        private static int GetLengthToCh(Vector2Int pos, Option<Ch>[,] board, Vector2Int dir) {
             if (!IsOnBoard(pos, board)) {
                 Debug.LogError("pos outside board");
                 return -1;
