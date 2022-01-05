@@ -33,7 +33,7 @@ namespace checkers {
             int[,] connections
         ) {
             if (!IsOnBoard(pos, board)) {
-                Debug.LogError("pos isn't board");
+                Debug.LogError("pos outside board");
                 return -1;
             }
 
@@ -73,7 +73,7 @@ namespace checkers {
             int count
         ) {
             if (!IsOnBoard(pos, board)) {
-                Debug.LogError("pos no is on board");
+                Debug.LogError("pos outside board");
                 return -1;
             }
 
@@ -156,7 +156,7 @@ namespace checkers {
             int count
         ) {
             if (!IsOnBoard(pos, board)) {
-                Debug.LogError("pos no is on board");
+                Debug.LogError("pos outside board");
                 return -1;
             }
 
